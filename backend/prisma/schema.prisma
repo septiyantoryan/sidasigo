@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  Admin
+  OPD
+  Masyarakat
+}
+
+enum JenisInovasi {
+  Digital
+  Non_Digital
+}
+
+enum Status {
+  Pending
+  Disetujui
+  Ditolak
+}
+
+enum StatusPelaku {
+  Umum
+  Pelajar
+}
+
+enum JenisRiset {
+  RisetKajian
+  Penelitian
+}
+
+model User {
+  id            String          @id @default(uuid())
+  name          String
+  email         String          @unique
+  emailVerified Boolean         @default(false)
+  image         String?
+  username      String?         @unique
+  displayUsername String?
+  role          Role            @default(Masyarakat)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  inovasiDaerah InovasiDaerah[]
+  krenova       Krenova[]
+
+  @@index([role])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model InovasiDaerah {
+  id            String                 @id @default(uuid())
+  userId        String
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  namaInovasi   String
+  inisiator     String
+  jenisInovasi  JenisInovasi
+  bentukInovasi String
+  tglUjiCoba    DateTime
+  tglPenerapan  DateTime
+  rancangBangun String                 @db.Text
+  tujuan        String                 @db.Text
+  manfaat       String                 @db.Text
+  hasil         String                 @db.Text
+  status        Status                 @default(Pending)
+  alasanPenolakan String?              @db.Text
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  indikator     IndikatorInovasiDaerah?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model IndikatorInovasiDaerah {
+  id                      String        @id @default(uuid())
+  inovasiDaerahId         String        @unique
+  inovasiDaerah           InovasiDaerah @relation(fields: [inovasiDaerahId], references: [id], onDelete: Cascade)
+  regulasi                String?
+  sdm                     String?
+  dukunganAnggaran        String?
+  alatKerja               String?
+  bimtek                  String?
+  integrasiRKPD           String?
+  aktorInovasi            String?
+  pelaksana               String?
+  jejaringInovasi         String?
+  sosialisasi             String?
+  pedomanTeknis           String?
+  kemudahanInfoLayanan    String?
+  kecepatanProses         String?
+  penyelesaianPengaduan   String?
+  layananTerintegrasi     String?
+  replikasi               String?
+  kecepatanPenciptaan     String?
+  kemanfaatan             String?
+  monitoringEvaluasi      String?
+  kualitasVideo           String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
+
+model SystemSetting {
+  id              String   @id @default("singleton")
+  siteTitle       String   @default("SIDASI-GO")
+  siteSubtitle    String   @default("")
+  heroWelcomeText String   @db.Text
+  heroImagePath   String?
+  journalUrl      String?  @db.Text
+  contactAddress  String?  @db.Text
+  contactPhone    String?
+  contactEmail    String?
+  mapsEmbedUrl    String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Krenova {
+  id                   String       @id @default(uuid())
+  userId               String
+  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  judulInovasi         String
+  jenisInovasi         JenisInovasi
+  waktuUjiCoba         DateTime
+  waktuPenerapan       DateTime
+  tahapInovasi         String
+  statusPelaku         StatusPelaku
+  namaInovator1        String
+  namaInovator2        String?
+  namaInovator3        String?
+  namaInovator4        String?
+  namaInovator5        String?
+  alamat               String
+  nomorHp              String
+  dokumenProposal      String
+  lampiranOriginalitas String
+  lampiranIdentitas    String
+  status               Status       @default(Pending)
+  alasanPenolakan      String?      @db.Text
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([statusPelaku])
+}
+
+model Riset {
+  id             String     @id @default(uuid())
+  judulKajian    String
+  timPeneliti    String
+  tahunPublikasi Int
+  abstrak        String     @db.Text
+  filePath       String
+  jenis          JenisRiset
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([jenis])
+}
+
+model Berita {
+  id         String   @id @default(uuid())
+  posterPath String
+  caption    String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Download {
+  id        String   @id @default(uuid())
+  judul     String
+  filePath  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

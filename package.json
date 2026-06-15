@@ -1,0 +1,17 @@
+{
+  "name": "sidasi-go",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "turbo dev --parallel",
+    "dev:client": "turbo dev --filter=sidasi-go-client",
+    "dev:server": "turbo dev --filter=sidasi-go-server",
+    "build": "turbo build",
+    "test": "turbo test --concurrency=1"
+  },
+  "devDependencies": {
+    "turbo": "^2.6.1"
+  }
+}

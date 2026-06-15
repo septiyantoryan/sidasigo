@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Turbo
+.turbo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
