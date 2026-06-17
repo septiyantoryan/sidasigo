@@ -35,7 +35,7 @@ export function InovasiSection() {
               />
               <CardContent className="flex min-h-56 flex-col gap-4 p-5 pt-8">
                 <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                  Showcase Entry
+                  Entri Etalase
                 </span>
                 <h3 className="line-clamp-2 pr-14 text-base font-semibold tracking-tight text-foreground">
                   {item.namaInovasi}
