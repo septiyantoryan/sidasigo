@@ -2,8 +2,6 @@ import {
   ArrowRight,
   BookOpen,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   Download,
   Lightbulb,
@@ -11,10 +9,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import useEmblaCarousel from "embla-carousel-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnimatedSection } from "@/components/public/AnimatedSection";
@@ -25,8 +20,14 @@ import { useKrenovaList } from "@/hooks/use-krenova";
 import { usePublicSettings } from "@/hooks/use-settings";
 import { api } from "@/lib/api";
 import { formatTanggal } from "@/lib/format";
-import { handleImageError, resolveImageUrl } from "@/lib/image";
+import { handleImageError } from "@/lib/image";
 import type { InovasiDaerah, Krenova } from "@/types";
+
+function resolveImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${api.baseUrl}${path}`;
+}
 
 export function LandingPage() {
   const settings = usePublicSettings();
@@ -40,33 +41,6 @@ export function LandingPage() {
   const journalUrl = rawJournal && !/^https?:\/\//.test(rawJournal) ? `https://${rawJournal}` : rawJournal;
   const heroImageUrl = resolveImageUrl(settings.data?.heroImagePath);
 
-  // Hero carousel images
-  const heroImagesQuery = useQuery({
-    queryKey: ["hero-images", "public"],
-    queryFn: () => api.get<{ id: string; path: string }[]>("/api/settings/hero-images"),
-    staleTime: 5 * 60_000,
-  });
-  const heroImages = heroImagesQuery.data ?? [];
-
-  // Embla carousel
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
-  const [emblaIndex, setEmblaIndex] = useState(0);
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-  const onSelect = useCallback((api: NonNullable<typeof emblaApi>) => {
-    setEmblaIndex(api.selectedScrollSnap());
-  }, []);
-  useEffect(() => {
-    if (!emblaApi) return;
-    emblaApi.on("select", onSelect);
-    // Autoplay
-    const timer = setInterval(() => emblaApi.scrollNext(), 5000);
-    return () => { clearInterval(timer); emblaApi.off("select", onSelect); };
-  }, [emblaApi, onSelect]);
-
-  // If no carousel images, fall back to heroImagePath
-  const slides = heroImages.length > 0 ? heroImages : (heroImageUrl ? [{ id: "legacy", path: heroImageUrl }] : []);
-
   const latestInovasi = inovasi.data?.items ?? [];
   const latestKrenova = krenova.data?.items ?? [];
 
@@ -74,50 +48,13 @@ export function LandingPage() {
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       {/* ===== HERO SECTION ===== */}
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
-        {slides.length > 0 ? (
-          <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
-            <div className="flex h-full">
-              {slides.map((slide) => (
-                <div key={slide.id} className="relative min-w-0 flex-[0_0_100%]">
-                  <img
-                    src={resolveImageUrl(slide.path) ?? undefined}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            {slides.length > 1 && (
-              <>
-                <button
-                  onClick={scrollPrev}
-                  className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/20 p-2 text-white backdrop-blur transition-colors hover:bg-black/40"
-                  aria-label="Previous"
-                >
-                  <ChevronLeft className="size-5" />
-                </button>
-                <button
-                  onClick={scrollNext}
-                  className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/20 p-2 text-white backdrop-blur transition-colors hover:bg-black/40"
-                  aria-label="Next"
-                >
-                  <ChevronRight className="size-5" />
-                </button>
-                <div className="absolute bottom-32 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => emblaApi?.scrollTo(i)}
-                      className={`size-2 rounded-full transition-all ${
-                        i === emblaIndex ? "w-6 bg-white" : "bg-white/50"
-                      }`}
-                      aria-label={`Go to slide ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+        {heroImageUrl ? (
+          <img
+            src={heroImageUrl}
+            alt=""
+            onError={handleImageError}
+            className="absolute inset-0 size-full object-cover"
+          />
         ) : null}
         <div
           className="absolute inset-0"

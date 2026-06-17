@@ -1,19 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { UploadCloud, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dropzone } from "@/components/shared/Dropzone";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAdminSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { api } from "@/lib/api";
-import { handleImageError, resolveImageUrl } from "@/lib/image";
+import { handleImageError } from "@/lib/image";
 
 const settingSchema = z.object({
   siteTitle: z.string().min(1, "Judul situs wajib diisi"),
@@ -35,6 +35,12 @@ const settingSchema = z.object({
 });
 
 type SettingFormInput = z.infer<typeof settingSchema>;
+
+function resolveImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${api.baseUrl}${path}`;
+}
 
 async function uploadHeroImage(file: File): Promise<string> {
   const formData = new FormData();
@@ -84,47 +90,6 @@ export function AdminSettingsPage() {
 
   const heroImage = resolveImageUrl(settings.data?.heroImagePath);
   const { errors } = form.formState;
-
-  // Hero images carousel management
-  const heroImagesQuery = useQuery({
-    queryKey: ["hero-images", "admin"],
-    queryFn: () => api.get<{ id: string; path: string }[]>("/api/admin/settings/hero-images"),
-  });
-  const [heroFiles, setHeroFiles] = useState<{ id: string; path: string; uploading?: boolean }[]>([]);
-
-  useEffect(() => {
-    if (heroImagesQuery.data) {
-      setHeroFiles(heroImagesQuery.data);
-    }
-  }, [heroImagesQuery.data]);
-
-  async function handleAddHeroImages(files: FileList | File[]) {
-    const formData = new FormData();
-    const fileArray = Array.from(files);
-    for (const file of fileArray) {
-      formData.append("files", file);
-    }
-    try {
-      const results = await api.upload<{ path: string }[]>("/api/admin/settings/hero-images", formData);
-      await queryClient.invalidateQueries({ queryKey: ["hero-images"] });
-      toast.success(`${results.length} gambar ditambahkan`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal mengunggah gambar");
-    }
-  }
-
-  async function handleDeleteHeroImage(id: string) {
-    try {
-      await api.delete(`/api/admin/settings/hero-images/${id}`);
-      setHeroFiles((prev) => prev.filter((f) => f.id !== id));
-      await queryClient.invalidateQueries({ queryKey: ["hero-images"] });
-      toast.success("Gambar dihapus");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal menghapus gambar");
-    }
-  }
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (settings.isLoading && !settings.data) {
     return (
@@ -193,52 +158,31 @@ export function AdminSettingsPage() {
 
           <div className="space-y-2">
             <Label>Gambar Hero</Label>
-            <p className="text-xs text-muted-foreground">
-              Kelola gambar latar hero beranda. Gambar muncul sebagai carousel otomatis.
-            </p>
-            {heroFiles.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {heroFiles.map((file) => (
-                  <div key={file.id} className="group relative overflow-hidden rounded-lg border border-border">
-                    <img
-                      src={resolveImageUrl(file.path) ?? undefined}
-                      alt="Hero"
-                      onError={handleImageError}
-                      className="h-32 w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteHeroImage(file.id)}
-                      className="absolute right-1 top-1 rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                      aria-label="Hapus gambar"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {heroImage && (
+              <img
+                src={heroImage}
+                alt="Pratinjau gambar hero"
+                onError={handleImageError}
+                className="mb-2 h-40 w-full rounded-lg border border-border object-cover sm:max-w-md"
+              />
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
+            <Dropzone
+              label="Unggah gambar (JPG/PNG/WEBP, maks 5MB)"
               accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  handleAddHeroImages(e.target.files);
-                  e.target.value = "";
+              maxSize={5 * 1024 * 1024}
+              onChange={async (file) => {
+                try {
+                  await uploadHeroImage(file);
+                  await queryClient.invalidateQueries({ queryKey: ["settings"] });
+                  toast.success("Gambar hero diperbarui");
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error ? err.message : "Gagal mengunggah gambar",
+                  );
+                  throw err;
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <UploadCloud className="size-4" /> Tambah Gambar
-            </Button>
           </div>
         </section>
 

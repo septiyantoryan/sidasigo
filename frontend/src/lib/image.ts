@@ -1,19 +1,6 @@
 import type { SyntheticEvent } from "react";
-import { api } from "./api";
 
 export const FALLBACK_IMAGE = "/image.jpg";
-
-/**
- * Resolves an image path to a full URL.
- * Handles absolute URLs (http/https) and relative paths.
- */
-export function resolveImageUrl(
-  path: string | null | undefined,
-): string | null {
-  if (!path) return null;
-  if (/^https?:\/\//.test(path)) return path;
-  return `${api.baseUrl}${path}`;
-}
 
 /**
  * onError handler untuk <img>. Jika gambar gagal dimuat (mis. file upload

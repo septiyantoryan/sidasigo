@@ -11,7 +11,13 @@ import useEmblaCarousel from "embla-carousel-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedSection } from "@/components/public/AnimatedSection";
 import { usePublicSettings } from "@/hooks/use-settings";
-import { resolveImageUrl } from "@/lib/image";
+import { api } from "@/lib/api";
+
+function resolveImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${api.baseUrl}${path}`;
+}
 
 export function HeroSection() {
   // Component implementation will be added in next steps
