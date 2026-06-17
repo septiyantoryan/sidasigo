@@ -22,7 +22,7 @@ function ServiceCard({
   title: string;
 }) {
   const inner = (
-    <div className="group flex flex-col items-center gap-3 rounded-[2rem] border border-border bg-card p-6 text-foreground shadow-xl shadow-primary/5 transition-all hover:-translate-y-1 hover:border-primary/40 hover:bg-accent hover:shadow-2xl hover:shadow-primary/10">
+    <div className="group flex flex-col items-center gap-3 rounded-[2rem] border border-border bg-card p-6 text-foreground shadow-2xl shadow-primary/10 transition-all hover:-translate-y-1 hover:border-primary/40 hover:bg-accent hover:shadow-2xl hover:shadow-primary/15">
       <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-background/70 text-primary transition-transform group-hover:rotate-3 group-hover:scale-105">
         <Icon aria-hidden className="size-6" />
       </div>
@@ -55,7 +55,7 @@ export function LinkSection() {
       : rawJournal;
 
   return (
-    <AnimatedSection className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6" direction="up">
+    <AnimatedSection className="relative z-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-6 -translate-y-[33%] md:-translate-y-[40%] lg:-translate-y-1/2" direction="up">
       <AnimatedSection direction="up" delay={0}>
         <ServiceCard
           to="/inovasi-daerah"

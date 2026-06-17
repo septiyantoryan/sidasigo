@@ -17,7 +17,7 @@ export function InovasiSection() {
   const latestInovasi = inovasi.data?.items ?? [];
 
   return (
-    <AnimatedSection direction="up" delay={0.2}>
+    <AnimatedSection className="pt-0 lg:pt-4" direction="up" delay={0.2}>
       <CarouselShowcase
         eyebrow="Etalase terbaru"
         title="Inovasi Daerah"
