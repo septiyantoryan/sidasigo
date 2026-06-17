@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,8 +42,8 @@ export function KrenovaDetailContent({
   const showActions = variant === "dashboard";
   const isOwner = Boolean(user?.role === "Masyarakat" && data && data.userId === user.id);
   const isAdmin = user?.role === "Admin";
-  const canEdit = showActions && isOwner && data?.status === "Pending";
-  const canDelete = showActions && ((isOwner && data?.status === "Pending") || isAdmin);
+  const canEdit = showActions && ((isOwner && data?.status !== "Disetujui") || isAdmin);
+  const canDelete = showActions && ((isOwner && data?.status !== "Disetujui") || isAdmin);
 
   const inovatorTeam = [
     data?.namaInovator2,
@@ -54,6 +54,7 @@ export function KrenovaDetailContent({
     .filter(Boolean)
     .join(", ") || "-";
 
+  const fotoProduk = data?.fotoProduk;
   const isDashboard = variant !== "public";
   const shellClass = isDashboard ? "" : "min-h-screen bg-background text-foreground";
   const innerClass = isDashboard
@@ -133,45 +134,81 @@ export function KrenovaDetailContent({
                     <Field label="Tim Inovator" value={inovatorTeam} />
                     <Field label="Waktu Uji Coba" value={formatTanggal(data.waktuUjiCoba)} />
                     <Field label="Waktu Penerapan" value={formatTanggal(data.waktuPenerapan)} />
-                    <Field label="Alamat" value={data.alamat} />
-                    <Field label="Nomor HP" value={data.nomorHp} />
+                    {isDashboard && <Field label="Alamat" value={data.alamat} />}
+                    {isDashboard && <Field label="Nomor HP" value={data.nomorHp} />}
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-[1.75rem]">
-                  <CardContent className="flex flex-col gap-4 p-5">
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Lampiran
-                    </h2>
-                    <ul className="grid gap-3 sm:grid-cols-3">
-                      {attachments.map((item) => {
-                        const value = data[item.key];
-                        return (
-                          <li
-                            key={item.key}
-                            className="rounded-2xl border border-border bg-muted/30 p-4"
-                          >
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                              {item.label}
-                            </p>
-                            {value ? (
-                              <a
-                                href={fileUrl(value)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                              >
-                                <Download className="size-3.5" /> Unduh
-                              </a>
-                            ) : (
-                              <p className="mt-2 text-sm text-muted-foreground">-</p>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
+                {data.abstrak && (
+                  <Card className="rounded-[1.75rem]">
+                    <CardContent className="p-5">
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Abstrak
+                      </h2>
+                      <p className="mt-2 whitespace-pre-line text-sm leading-7 text-foreground">
+                        {data.abstrak}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {fotoProduk && fotoProduk.length > 0 && (
+                  <Card className="rounded-[1.75rem]">
+                    <CardContent className="p-5">
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Foto Produk
+                      </h2>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {fotoProduk.map((path, i) => (
+                          <div key={i} className="overflow-hidden rounded-lg border border-border">
+                            <img
+                              src={fileUrl(path)}
+                              alt={`Foto produk ${i + 1}`}
+                              className="h-48 w-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {isDashboard && (
+                  <Card className="rounded-[1.75rem]">
+                    <CardContent className="flex flex-col gap-4 p-5">
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Lampiran
+                      </h2>
+                      <ul className="grid gap-3 sm:grid-cols-3">
+                        {attachments.map((item) => {
+                          const value = data[item.key];
+                          return (
+                            <li
+                              key={item.key}
+                              className="rounded-2xl border border-border bg-muted/30 p-4"
+                            >
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {item.label}
+                              </p>
+                              {value ? (
+                                <a
+                                  href={fileUrl(value)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                                >
+                                  <Download className="size-3.5" /> Unduh
+                                </a>
+                              ) : (
+                                <p className="mt-2 text-sm text-muted-foreground">-</p>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               <aside className="flex flex-col gap-4">
