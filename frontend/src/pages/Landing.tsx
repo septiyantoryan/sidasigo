@@ -20,14 +20,8 @@ import { useKrenovaList } from "@/hooks/use-krenova";
 import { usePublicSettings } from "@/hooks/use-settings";
 import { api } from "@/lib/api";
 import { formatTanggal } from "@/lib/format";
-import { handleImageError } from "@/lib/image";
+import { handleImageError, resolveImageUrl } from "@/lib/image";
 import type { InovasiDaerah, Krenova } from "@/types";
-
-function resolveImageUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  if (/^https?:\/\//.test(path)) return path;
-  return `${api.baseUrl}${path}`;
-}
 
 export function LandingPage() {
   const settings = usePublicSettings();
