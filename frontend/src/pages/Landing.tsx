@@ -18,7 +18,6 @@ import { JenisBadge } from "@/components/shared/JenisBadge";
 import { useInovasiDaerahList } from "@/hooks/use-inovasi-daerah";
 import { useKrenovaList } from "@/hooks/use-krenova";
 import { usePublicSettings } from "@/hooks/use-settings";
-import { api } from "@/lib/api";
 import { formatTanggal } from "@/lib/format";
 import { handleImageError, resolveImageUrl } from "@/lib/image";
 import type { InovasiDaerah, Krenova } from "@/types";
