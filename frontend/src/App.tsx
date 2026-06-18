@@ -268,7 +268,7 @@ export default function App() {
           </Route>
         </Route>
 
-      <Route element={<ProtectedRoute roles={["OPD"]} />}>
+      <Route element={<ProtectedRoute roles={["OPD", "Admin"]} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard/opd" element={<OPDDashboardPage />} />
           <Route
@@ -294,7 +294,7 @@ export default function App() {
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={["Masyarakat"]} />}>
+        <Route element={<ProtectedRoute roles={["Masyarakat", "Admin"]} />}>
         <Route element={<DashboardLayout />}>
           <Route
             path="/dashboard/masyarakat"
