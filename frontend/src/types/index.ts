@@ -100,6 +100,22 @@ export type Indikator = {
   kualitasVideo?: string | null;
 };
 
+export type IndikatorAttachment = {
+  id: string;
+  inovasiDaerahId: string;
+  field: string;
+  path: string;
+  createdAt: string;
+};
+
+export type KrenovaAttachment = {
+  id: string;
+  krenovaId: string;
+  field: string;
+  path: string;
+  createdAt: string;
+};
+
 export type Krenova = {
   id: string;
   userId: string;
@@ -116,6 +132,8 @@ export type Krenova = {
   namaInovator5?: string | null;
   alamat: string;
   nomorHp: string;
+  abstrak?: string | null;
+  fotoProduk?: string[];
   dokumenProposal: string;
   lampiranOriginalitas: string;
   lampiranIdentitas: string;

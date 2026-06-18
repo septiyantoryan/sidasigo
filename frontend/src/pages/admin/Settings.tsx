@@ -13,7 +13,7 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAdminSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { api } from "@/lib/api";
-import { handleImageError } from "@/lib/image";
+import { handleImageError, resolveImageUrl } from "@/lib/image";
 
 const settingSchema = z.object({
   siteTitle: z.string().min(1, "Judul situs wajib diisi"),
@@ -35,12 +35,6 @@ const settingSchema = z.object({
 });
 
 type SettingFormInput = z.infer<typeof settingSchema>;
-
-function resolveImageUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  if (/^https?:\/\//.test(path)) return path;
-  return `${api.baseUrl}${path}`;
-}
 
 async function uploadHeroImage(file: File): Promise<string> {
   const formData = new FormData();
