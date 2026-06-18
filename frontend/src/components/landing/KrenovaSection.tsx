@@ -12,6 +12,8 @@ export function KrenovaSection() {
     sort: "newest",
     pageSize: 6,
     status: "Disetujui",
+    sortBy: "waktuPenerapan",
+    sortDir: "desc",
   });
 
   const latestKrenova = krenova.data?.items ?? [];

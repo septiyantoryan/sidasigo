@@ -26,7 +26,7 @@ function RisetTabPanel({ jenis }: { jenis: "RisetKajian" | "Penelitian" }) {
     setPage(1);
   }, [debouncedSearch, pageSize]);
 
-  const list = useRisetList({ page, pageSize, search: debouncedSearch, jenis });
+  const list = useRisetList({ page, pageSize, search: debouncedSearch, jenis, sortBy: "tahunPublikasi", sortDir: "desc" });
 
   const items = list.data?.items ?? [];
   const pageCount = list.data?.pageCount ?? 1;

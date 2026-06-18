@@ -12,6 +12,8 @@ export function InovasiSection() {
     sort: "newest",
     pageSize: 6,
     status: "Disetujui",
+    sortBy: "tglPenerapan",
+    sortDir: "desc",
   });
 
   const latestInovasi = inovasi.data?.items ?? [];

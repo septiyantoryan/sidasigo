@@ -38,6 +38,8 @@ export function InovasiDaerahListPage() {
     pageSize,
     search: debouncedSearch,
     jenis: jenis === "all" ? undefined : (jenis as "Digital" | "Non_Digital"),
+    sortBy: "tglPenerapan",
+    sortDir: "desc",
   });
 
   const items = list.data?.items ?? [];
