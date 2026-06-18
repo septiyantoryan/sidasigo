@@ -19,7 +19,6 @@ export function InovasiSection() {
   return (
     <AnimatedSection className="pt-0" direction="up" delay={0.2}>
       <CarouselShowcase
-        eyebrow="Etalase terbaru"
         title="Inovasi Daerah"
         items={latestInovasi}
         isLoading={inovasi.isLoading}

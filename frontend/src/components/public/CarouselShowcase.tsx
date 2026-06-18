@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 
 type CarouselShowcaseProps<T> = {
   title: string;
-  eyebrow: string;
   items: T[];
   renderCard: (item: T) => ReactNode;
   emptyMessage: string;
@@ -16,7 +15,6 @@ type CarouselShowcaseProps<T> = {
 
 export function CarouselShowcase<T>({
   title,
-  eyebrow,
   items,
   renderCard,
   emptyMessage,
@@ -57,9 +55,6 @@ export function CarouselShowcase<T>({
     <section className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-            {eyebrow}
-          </span>
           <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
             {title}
           </h2>
@@ -107,7 +102,7 @@ export function CarouselShowcase<T>({
           <div
             ref={scrollerRef}
             onScroll={updateScrollState}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-2 scrollbar-none [&::-webkit-scrollbar]:hidden"
           >
             {items.map((item, idx) => (
               <div

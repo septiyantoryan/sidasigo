@@ -35,15 +35,17 @@ function RisetTabPanel({ jenis }: { jenis: "RisetKajian" | "Penelitian" }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          aria-label={`Cari ${jenis}`}
-          value={search}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-          placeholder={`Cari judul atau peneliti ${jenis.toLowerCase()}...`}
-          className="rounded-full pl-9"
-        />
+      <div className="sticky top-16 z-20 -mx-4 bg-background/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="relative mx-auto max-w-6xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            aria-label={`Cari ${jenis}`}
+            value={search}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            placeholder={`Cari judul atau peneliti ${jenis.toLowerCase()}...`}
+            className="rounded-full pl-9"
+          />
+        </div>
       </div>
 
       {isInitialLoading ? (
@@ -89,16 +91,9 @@ export function RisetListPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:py-14">
         <AnimatedSection direction="up">
           <div className="flex flex-col gap-4">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary shadow-sm">
-              <BookOpen className="size-3.5" />
-              Pustaka Ilmiah
-            </span>
-            <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+            <h1 className="text-4xl font-black tracking-tight text-foreground text-center sm:text-5xl">
               Riset &amp; Kajian
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-              Kumpulan riset dan kajian ilmiah seputar pembangunan dan inovasi daerah Kabupaten Grobogan.
-            </p>
           </div>
         </AnimatedSection>
 

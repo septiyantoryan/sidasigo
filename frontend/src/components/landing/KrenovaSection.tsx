@@ -19,7 +19,6 @@ export function KrenovaSection() {
   return (
     <AnimatedSection direction="up" delay={0.35}>
       <CarouselShowcase
-        eyebrow="Etalase terbaru"
         title="Krenova"
         items={latestKrenova}
         isLoading={krenova.isLoading}

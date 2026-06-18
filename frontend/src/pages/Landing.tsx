@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { LinkSection } from "@/components/landing/LinkSection";
 import { InovasiSection } from "@/components/landing/InovasiSection";
 import { KrenovaSection } from "@/components/landing/KrenovaSection";
+import { BeritaSection } from "@/components/landing/BeritaSection";
 
 export function LandingPage() {
   return (
@@ -11,6 +12,7 @@ export function LandingPage() {
         <LinkSection />
         <InovasiSection />
         <KrenovaSection />
+        <BeritaSection />
       </div>
     </div>
   );

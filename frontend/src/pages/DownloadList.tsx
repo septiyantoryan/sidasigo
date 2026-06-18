@@ -60,23 +60,9 @@ export function DownloadListPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:py-14">
         <AnimatedSection direction="up">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary shadow-sm">
-                <DownloadIcon className="size-3.5" />
-                Pusat Unduhan
-              </span>
-              {!isInitialLoading && (
-                <span className="text-sm text-muted-foreground">
-                  {total} dokumen ditemukan
-                </span>
-              )}
-            </div>
-            <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+            <h1 className="text-4xl font-black tracking-tight text-foreground text-center sm:text-5xl">
               Unduhan
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-              Kumpulan dokumen resmi yang dapat diunduh publik seputar inovasi dan pembangunan daerah Kabupaten Grobogan.
-            </p>
           </div>
         </AnimatedSection>
 
