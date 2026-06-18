@@ -16,7 +16,8 @@ export type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
-  items?: { title: string; url: string }[];
+  items?: (Pick<NavItem, "title" | "url" | "activePatterns">)[];
+  activePatterns?: string[];
 };
 
 export type Role = "Admin" | "OPD" | "Masyarakat";
@@ -98,6 +99,7 @@ export function getNavData(role: Role | undefined): NavItem[] {
         title: "Daftar Inovasi",
         url: "/dashboard/inovasi-daerah",
         icon: Lightbulb,
+        activePatterns: ["/inovasi-daerah"],
       },
     ];
   }
@@ -113,6 +115,7 @@ export function getNavData(role: Role | undefined): NavItem[] {
         title: "Daftar Krenova",
         url: "/dashboard/krenova",
         icon: Sparkles,
+        activePatterns: ["/krenova"],
       },
     ];
   }

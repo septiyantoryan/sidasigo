@@ -20,11 +20,17 @@ import type { NavItem } from "./nav-data";
 function isPathActive(
   currentPath: string,
   target: string,
-  options?: { exact?: boolean },
+  options?: { activePatterns?: string[] },
 ) {
   if (target === "/") return currentPath === "/";
-  if (options?.exact) return currentPath === target;
-  return currentPath === target || currentPath.startsWith(`${target}/`);
+  const prefixMatch =
+    currentPath === target || currentPath.startsWith(`${target}/`);
+  if (prefixMatch) return true;
+  const patternMatch =
+    options?.activePatterns?.some(
+      (p) => currentPath === p || currentPath.startsWith(`${p}/`),
+    ) ?? false;
+  return patternMatch;
 }
 
 export function NavMain({ items }: { items: NavItem[] }) {
@@ -39,7 +45,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
 
           if (!hasChildren) {
             const active = isPathActive(location.pathname, item.url, {
-              exact: true,
+              activePatterns: item.activePatterns,
             });
             return (
               <SidebarMenuItem key={`${item.title}-${item.url}`}>
@@ -58,7 +64,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
           }
 
           const childActive = item.items!.some((sub) =>
-            isPathActive(location.pathname, sub.url, { exact: true }),
+            isPathActive(location.pathname, sub.url, {
+              activePatterns: sub.activePatterns,
+            }),
           );
           const parentActive = childActive;
 
@@ -81,7 +89,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
                   <SidebarMenuSub>
                     {item.items!.map((sub) => {
                       const subActive = isPathActive(location.pathname, sub.url, {
-                        exact: true,
+                        activePatterns: sub.activePatterns,
                       });
                       return (
                         <SidebarMenuSubItem key={`${sub.title}-${sub.url}`}>

@@ -20,9 +20,9 @@ const base = {
   alamat: z.string().min(1),
   nomorHp: z.string().regex(/^\+?\d{8,15}$/),
   abstrak: z.string().min(1, "Abstrak wajib diisi"),
-  dokumenProposal: z.string().min(1),
-  lampiranOriginalitas: z.string().min(1),
-  lampiranIdentitas: z.string().min(1),
+  dokumenProposal: z.string().optional().nullable(),
+  lampiranOriginalitas: z.string().optional().nullable(),
+  lampiranIdentitas: z.string().optional().nullable(),
   attachments: attachmentsOption,
 };
 

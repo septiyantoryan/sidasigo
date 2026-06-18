@@ -122,7 +122,7 @@ export function AdminRisetManagePage() {
                     <TableCell className="text-muted-foreground">
                       {(page - 1) * pageSize + index + 1}
                     </TableCell>
-                    <TableCell className="font-medium">{item.judulKajian}</TableCell>
+                    <TableCell className="max-w-[12rem] truncate font-medium">{item.judulKajian}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.timPeneliti}</TableCell>
                     <TableCell>
                       <Badge variant={item.jenis === "RisetKajian" ? "default" : "secondary"}>

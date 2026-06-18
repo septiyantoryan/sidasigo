@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -54,7 +54,9 @@ export function KrenovaDetailContent({
     .filter(Boolean)
     .join(", ") || "-";
 
-  const fotoProduk = data?.fotoProduk;
+  const fotoProduk = data?.fotoProduk ?? (data?.attachments ?? [])
+    .filter((a) => a.field === "fotoProduk")
+    .map((a) => a.path);
   const isDashboard = variant !== "public";
   const shellClass = isDashboard ? "" : "min-h-screen bg-background text-foreground";
   const innerClass = isDashboard
@@ -126,16 +128,18 @@ export function KrenovaDetailContent({
               </div>
             )}
 
-            <div className="grid gap-8 lg:grid-cols-[1fr_18rem]">
-              <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6">
                 <Card className="rounded-[1.75rem]">
                   <CardContent className="grid gap-6 p-5 sm:grid-cols-2">
                     <Field label="Inovator Utama" value={data.namaInovator1} />
                     <Field label="Tim Inovator" value={inovatorTeam} />
                     <Field label="Waktu Uji Coba" value={formatTanggal(data.waktuUjiCoba)} />
                     <Field label="Waktu Penerapan" value={formatTanggal(data.waktuPenerapan)} />
+                    <Field label="Status Pelaku" value={data.statusPelaku} />
+                    <Field label="Jenis" value={data.jenisInovasi === "Digital" ? "Digital" : "Non Digital"} />
                     {isDashboard && <Field label="Alamat" value={data.alamat} />}
                     {isDashboard && <Field label="Nomor HP" value={data.nomorHp} />}
+                    <Field label="Diperbarui" value={formatTanggal(data.updatedAt)} />
                   </CardContent>
                 </Card>
 
@@ -181,7 +185,11 @@ export function KrenovaDetailContent({
                       </h2>
                       <ul className="grid gap-3 sm:grid-cols-3">
                         {attachments.map((item) => {
-                          const value = data[item.key];
+                          const colFile = data[item.key];
+                          const attFiles = (data.attachments ?? [])
+                            .filter((a) => a.field === item.key)
+                            .map((a) => a.path);
+                          const allFiles = colFile ? [colFile, ...attFiles] : attFiles;
                           return (
                             <li
                               key={item.key}
@@ -190,15 +198,22 @@ export function KrenovaDetailContent({
                               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {item.label}
                               </p>
-                              {value ? (
-                                <a
-                                  href={fileUrl(value)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                                >
-                                  <Download className="size-3.5" /> Unduh
-                                </a>
+                              {allFiles.length > 0 ? (
+                                <ul className="mt-2 space-y-1">
+                                  {allFiles.map((path, i) => (
+                                    <li key={i}>
+                                      <a
+                                        href={fileUrl(path)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                                      >
+                                        <Download className="size-3.5" />
+                                        {allFiles.length > 1 ? `File ${i + 1}` : "Unduh"}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
                               ) : (
                                 <p className="mt-2 text-sm text-muted-foreground">-</p>
                               )}
@@ -210,29 +225,6 @@ export function KrenovaDetailContent({
                   </Card>
                 )}
               </div>
-
-              <aside className="flex flex-col gap-4">
-                <Card className="rounded-[1.75rem]">
-                  <CardContent className="flex flex-col gap-3 p-5">
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Metadata</span>
-                    <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-                      <div className="flex items-center justify-between gap-2">
-                        <span>Status Pelaku</span>
-                        <span className="font-medium text-foreground">{data.statusPelaku}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span>Jenis</span>
-                        <span className="font-medium text-foreground">{data.jenisInovasi === "Digital" ? "Digital" : "Non Digital"}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span>Diperbarui</span>
-                        <span className="font-medium text-foreground">{formatTanggal(data.updatedAt)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </aside>
-            </div>
           </>
         ) : (
           <p className="text-sm text-muted-foreground">Data tidak ditemukan.</p>

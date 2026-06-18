@@ -76,9 +76,9 @@ export async function createKrenova(
 
   const subdir = `krenova/${created.id}`;
   const [dokumenProposal, lampiranOriginalitas, lampiranIdentitas] = await Promise.all([
-    relocateUploadedFile(created.dokumenProposal, subdir),
-    relocateUploadedFile(created.lampiranOriginalitas, subdir),
-    relocateUploadedFile(created.lampiranIdentitas, subdir),
+    created.dokumenProposal ? relocateUploadedFile(created.dokumenProposal, subdir) : Promise.resolve(null),
+    created.lampiranOriginalitas ? relocateUploadedFile(created.lampiranOriginalitas, subdir) : Promise.resolve(null),
+    created.lampiranIdentitas ? relocateUploadedFile(created.lampiranIdentitas, subdir) : Promise.resolve(null),
   ]);
 
   const changed =

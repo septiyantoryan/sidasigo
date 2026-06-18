@@ -134,9 +134,10 @@ export type Krenova = {
   nomorHp: string;
   abstrak?: string | null;
   fotoProduk?: string[];
-  dokumenProposal: string;
-  lampiranOriginalitas: string;
-  lampiranIdentitas: string;
+  dokumenProposal: string | null;
+  lampiranOriginalitas: string | null;
+  lampiranIdentitas: string | null;
+  attachments?: { id: string; field: string; path: string; createdAt: string }[];
   status: Status;
   alasanPenolakan?: string | null;
   createdAt: string;

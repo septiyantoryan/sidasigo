@@ -18,7 +18,8 @@ function DocItem({
   value: string;
   attPaths?: string[];
 }) {
-  const hasFiles = (attPaths && attPaths.length > 0) || Boolean(value);
+  const allFiles = value ? [value, ...(attPaths ?? [])] : (attPaths ?? []);
+  const hasFiles = allFiles.length > 0;
   return (
     <li
       className={cn(
@@ -43,28 +44,17 @@ function DocItem({
       </div>
       {hasFiles ? (
         <div className="flex flex-col gap-1">
-          {attPaths && attPaths.length > 0 ? (
-            attPaths.map((p, i) => (
-              <a
-                key={i}
-                href={fileUrl(p)}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              >
-                <Download className="size-3.5" /> Unduh {attPaths.length > 1 ? i + 1 : ""}
-              </a>
-            ))
-          ) : value ? (
+          {allFiles.map((p, i) => (
             <a
-              href={fileUrl(value)}
+              key={i}
+              href={fileUrl(p)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
-              <Download className="size-3.5" /> Unduh
+              <Download className="size-3.5" /> Unduh {allFiles.length > 1 ? i + 1 : ""}
             </a>
-          ) : null}
+          ))}
         </div>
       ) : (
         <span className="shrink-0 text-xs text-muted-foreground">Belum ada</span>

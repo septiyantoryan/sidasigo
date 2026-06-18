@@ -154,6 +154,7 @@ export function AdminSubmissionReviewPage() {
               <Detail label="Inovator" value={(data as never as { namaInovator1: string }).namaInovator1} />
               <Detail label="Alamat" value={(data as never as { alamat: string }).alamat} />
               <Detail label="Nomor HP" value={(data as never as { nomorHp: string }).nomorHp} />
+              <DetailLong label="Abstrak" value={(data as never as { abstrak?: string | null }).abstrak ?? "-"} />
             </CardContent>
           </Card>
 
@@ -174,7 +175,11 @@ export function AdminSubmissionReviewPage() {
                     label: string;
                   }>
                 ).map((item) => {
-                  const value = (data as never as Krenova)[item.key];
+                  const colFile = (data as never as Krenova)[item.key];
+                  const attFiles = ((data as never as Krenova).attachments ?? [])
+                    .filter((a) => a.field === item.key)
+                    .map((a) => a.path);
+                  const allFiles = colFile ? [colFile, ...attFiles] : attFiles;
                   return (
                     <li
                       key={item.key}
@@ -183,15 +188,22 @@ export function AdminSubmissionReviewPage() {
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {item.label}
                       </p>
-                      {value ? (
-                        <a
-                          href={fileUrl(value)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                        >
-                          <Download className="size-3.5" /> Unduh
-                        </a>
+                      {allFiles.length > 0 ? (
+                        <ul className="mt-2 space-y-1">
+                          {allFiles.map((path, i) => (
+                            <li key={i}>
+                              <a
+                                href={fileUrl(path)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                              >
+                                <Download className="size-3.5" />
+                                {allFiles.length > 1 ? `File ${i + 1}` : "Unduh"}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       ) : (
                         <p className="mt-2 text-sm text-muted-foreground">-</p>
                       )}
@@ -199,6 +211,29 @@ export function AdminSubmissionReviewPage() {
                   );
                 })}
               </ul>
+
+              {(() => {
+                const krenova = data as never as Krenova;
+                const fotoArr = krenova.fotoProduk ?? (krenova.attachments ?? [])
+                  .filter((a) => a.field === "fotoProduk")
+                  .map((a) => a.path);
+                return fotoArr && fotoArr.length > 0 ? (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold tracking-tight mb-2">Foto Produk</h4>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {fotoArr.map((path: string, i: number) => (
+                        <div key={i} className="overflow-hidden rounded-lg border border-border">
+                          <img
+                            src={fileUrl(path)}
+                            alt={`Foto produk ${i + 1}`}
+                            className="h-40 w-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </CardContent>
           </Card>
         </>

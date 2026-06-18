@@ -133,7 +133,7 @@ export function AdminInovasiDaerahManagePage() {
                       {(page - 1) * pageSize + index + 1}
                     </TableCell>
                     <TableCell className="font-medium">{item.namaInovasi}</TableCell>
-                    <TableCell>{item.inisiator}</TableCell>
+                    <TableCell className="max-w-[12rem] truncate">{item.inisiator}</TableCell>
                     <TableCell>
                       <JenisBadge jenis={item.jenisInovasi} />
                     </TableCell>

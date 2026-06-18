@@ -36,6 +36,12 @@ async function uploadSingle(file: File): Promise<string> {
   return result.path;
 }
 
+type AttachmentEntry = {
+  path: string;
+  name: string;
+  previewUrl?: string;
+};
+
 // Step 1 validates only the data fields; the documents are handled in step 2.
 const krenovaStep1Schema = krenovaBaseSchema
   .omit({
@@ -51,7 +57,7 @@ type DocKey =
   | "lampiranIdentitas"
   | "fotoProduk";
 
-const KRENOVA_DOCS: Array<{ key: DocKey; label: string }> = [
+export const KRENOVA_DOCS: Array<{ key: DocKey; label: string }> = [
   { key: "dokumenProposal", label: "Dokumen Proposal" },
   { key: "lampiranOriginalitas", label: "Lampiran Originalitas" },
   { key: "lampiranIdentitas", label: "Lampiran Identitas" },
@@ -146,11 +152,8 @@ export function CreateKrenovaPage() {
 
   const [step, setStep] = useState(1);
   const [dataValues, setDataValues] = useState<KrenovaCreateInput>();
-  const [docValues, setDocValues] = useState<Record<string, string>>({});
-  const [docPreviews, setDocPreviews] = useState<Record<string, string>>({});
+  const [attachmentEntries, setAttachmentEntries] = useState<Record<string, AttachmentEntry[]>>({});
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
-  const [newAttachments, setNewAttachments] = useState<{ field: string; path: string }[]>([]);
-  const [fotoFiles, setFotoFiles] = useState<{ path: string; name: string; previewUrl?: string }[]>([]);
 
   const form = useForm<KrenovaCreateInput>({
     resolver: zodResolver(
@@ -162,44 +165,55 @@ export function CreateKrenovaPage() {
     },
   });
 
-  // Object URLs to preview freshly-uploaded files in-browser (the server only
-  // authorizes file access once the file is referenced by a saved record).
   const previewsRef = useRef<Record<string, string>>({});
   useEffect(() => {
-    previewsRef.current = docPreviews;
-  }, [docPreviews]);
+    const all: Record<string, string> = {};
+    for (const entries of Object.values(attachmentEntries)) {
+      for (const e of entries) {
+        if (e.previewUrl) all[e.path] = e.previewUrl;
+      }
+    }
+    previewsRef.current = all;
+  }, [attachmentEntries]);
   useEffect(() => {
     return () => {
-      Object.values(previewsRef.current).forEach((url) =>
-        URL.revokeObjectURL(url),
-      );
+      Object.values(previewsRef.current).forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
-  const filledDocs = KRENOVA_DOCS.filter((d) => Boolean(docValues[d.key])).length;
-  const filledTotal = filledDocs + fotoFiles.length;
+  const filledDocs = KRENOVA_DOCS.filter(
+    (d) => (attachmentEntries[d.key]?.length ?? 0) > 0,
+  ).length;
 
-  async function handleUpload(key: DocKey, file: File) {
+  async function handleAddFiles(key: DocKey, files: File[]) {
     setUploadingKey(key);
     try {
-      const path = await uploadSingle(file);
-      const objectUrl = URL.createObjectURL(file);
-      setDocValues((prev) => ({ ...prev, [key]: path }));
-      setDocPreviews((prev) => {
-        if (prev[key]) URL.revokeObjectURL(prev[key]);
-        return { ...prev, [key]: objectUrl };
-      });
-      if (key === "fotoProduk") {
-        setNewAttachments((prev) => [...prev, { field: "fotoProduk", path }]);
-        setFotoFiles((prev) => [...prev, { path, name: file.name, previewUrl: objectUrl }]);
+      for (const file of files) {
+        const path = await uploadSingle(file);
+        const previewUrl = URL.createObjectURL(file);
+        setAttachmentEntries((prev) => ({
+          ...prev,
+          [key]: [...(prev[key] ?? []), { path, name: file.name, previewUrl }],
+        }));
       }
       toast.success("Berkas terunggah");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengunggah berkas");
-      throw err;
     } finally {
       setUploadingKey(null);
     }
+  }
+
+  function handleRemoveFile(key: DocKey, index: number) {
+    setAttachmentEntries((prev) => {
+      const list = prev[key];
+      if (!list) return prev;
+      const removed = list[index];
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      const next = [...list];
+      next.splice(index, 1);
+      return { ...prev, [key]: next };
+    });
   }
 
   async function handleFinish() {
@@ -210,14 +224,28 @@ export function CreateKrenovaPage() {
     }
 
     try {
-      const attachments = newAttachments.length > 0 ? newAttachments : undefined;
+      const payload = { ...dataValues };
+      const attachments: { field: string; path: string }[] = [];
+
+      for (const doc of KRENOVA_DOCS) {
+        const files = attachmentEntries[doc.key] ?? [];
+        if (doc.key !== "fotoProduk") {
+          (payload as Record<string, unknown>)[doc.key] = files[0]?.path ?? null;
+          for (let i = 1; i < files.length; i++) {
+            attachments.push({ field: doc.key, path: files[i].path });
+          }
+        } else {
+          for (const file of files) {
+            attachments.push({ field: "fotoProduk", path: file.path });
+          }
+        }
+      }
+
       const created = await createMutation.mutateAsync({
-        ...dataValues,
-        dokumenProposal: docValues.dokumenProposal ?? "",
-        lampiranOriginalitas: docValues.lampiranOriginalitas ?? "",
-        lampiranIdentitas: docValues.lampiranIdentitas ?? "",
-        attachments,
+        ...payload,
+        attachments: attachments.length > 0 ? attachments : undefined,
       } as never);
+
       toast.success("Krenova berhasil dikirim, menunggu verifikasi admin.");
       navigate(`/dashboard/krenova/${created.id}`);
     } catch (err) {
@@ -283,36 +311,28 @@ export function CreateKrenovaPage() {
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-medium">Dokumen dan Foto</p>
               <span className="text-sm text-muted-foreground">
-                {filledTotal} terunggah
+                {filledDocs} terunggah
               </span>
             </div>
           </div>
 
           <section className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-6">
-            {KRENOVA_DOCS.map((doc) => {
-              const value = docValues[doc.key] ?? "";
-              const isFoto = doc.key === "fotoProduk";
-              const files = isFoto
-                ? fotoFiles
-                : value
-                  ? [{ path: value, name: value.split(/[\\/]/).pop() ?? value, previewUrl: docPreviews[doc.key] }]
-                  : [];
-              return (
-                <MultiFileUploader
-                  key={doc.key}
-                  label={doc.label}
-                  files={files}
-                  disabled={uploadingKey !== null && uploadingKey !== doc.key}
-                  uploading={uploadingKey === doc.key}
-                  accept={
-                    isFoto
-                      ? "image/png,image/jpeg,image/webp"
-                      : "application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  }
-                  onChange={(fileList) => handleUpload(doc.key, fileList[0])}
-                />
-              );
-            })}
+            {KRENOVA_DOCS.map((doc) => (
+              <MultiFileUploader
+                key={doc.key}
+                label={doc.label}
+                files={attachmentEntries[doc.key] ?? []}
+                disabled={uploadingKey !== null && uploadingKey !== doc.key}
+                uploading={uploadingKey === doc.key}
+                onChange={(fileList) => handleAddFiles(doc.key, fileList)}
+                onRemove={(index) => handleRemoveFile(doc.key, index)}
+                accept={
+                  doc.key === "fotoProduk"
+                    ? "image/png,image/jpeg,image/webp"
+                    : "application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                }
+              />
+            ))}
           </section>
 
           <div className="flex items-center justify-between gap-3">
@@ -369,9 +389,7 @@ export function CreateKrenovaPage() {
             <h2 className="text-base font-semibold tracking-tight">Dokumen &amp; Foto</h2>
             <ul className="grid gap-2 sm:grid-cols-2">
               {KRENOVA_DOCS.map((doc) => {
-                const value = docValues[doc.key] ?? "";
-                const isFoto = doc.key === "fotoProduk";
-                const fotoList = isFoto ? fotoFiles : [];
+                const files = attachmentEntries[doc.key] ?? [];
                 return (
                   <li
                     key={doc.key}
@@ -381,33 +399,22 @@ export function CreateKrenovaPage() {
                       <FileText className="size-4 shrink-0 text-primary" />
                       <span className="truncate text-sm">{doc.label}</span>
                     </span>
-                    {isFoto && fotoList.length > 0 ? (
+                    {files.length > 0 ? (
                       <div className="flex gap-1">
-                        {fotoList.map((f, i) => (
+                        {files.map((f, i) => (
                           <a
                             key={i}
-                            href={f.previewUrl}
+                            href={f.previewUrl ?? f.path}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
                           >
-                            <ExternalLink className="size-3.5" /> Foto {i + 1}
+                            <ExternalLink className="size-3.5" /> {doc.key === "fotoProduk" ? `Foto ${i + 1}` : `File ${i + 1}`}
                           </a>
                         ))}
                       </div>
-                    ) : value ? (
-                      <a
-                        href={docPreviews[doc.key]}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                      >
-                        <ExternalLink className="size-3.5" /> Lihat
-                      </a>
                     ) : (
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        Belum ada
-                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">Belum ada</span>
                     )}
                   </li>
                 );

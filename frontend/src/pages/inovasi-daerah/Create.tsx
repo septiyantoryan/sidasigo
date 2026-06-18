@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { InovasiDaerahForm } from "@/components/inovasi-daerah/InovasiDaerahForm";
-import { FileUploadField } from "@/components/shared/FileUploadField";
+import { MultiFileUploader } from "@/components/shared/MultiFileUploader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,12 @@ async function uploadSingle(file: File): Promise<string> {
   );
   return result.path;
 }
+
+type AttachmentEntry = {
+  path: string;
+  name: string;
+  previewUrl?: string;
+};
 
 const STEPS = [
   { id: 1, title: "Data Inovasi", icon: FileText },
@@ -131,7 +137,12 @@ export function CreateInovasiDaerahPage() {
   const [formValues, setFormValues] =
     useState<Partial<InovasiDaerahCreateInput>>();
   const [docValues, setDocValues] = useState<Record<string, string>>({});
-  const [docPreviews, setDocPreviews] = useState<Record<string, string>>({});
+  const [attachmentEntries, setAttachmentEntries] = useState<
+    Record<string, AttachmentEntry[]>
+  >({});
+  const [newAttachments, setNewAttachments] = useState<
+    { field: string; path: string }[]
+  >([]);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   // Local object URLs for previewing freshly-uploaded files. The server only
@@ -140,8 +151,14 @@ export function CreateInovasiDaerahPage() {
   // (which would return 403 because nothing references the file yet).
   const previewsRef = useRef<Record<string, string>>({});
   useEffect(() => {
-    previewsRef.current = docPreviews;
-  }, [docPreviews]);
+    const map: Record<string, string> = {};
+    for (const key of Object.keys(attachmentEntries)) {
+      for (const entry of attachmentEntries[key]) {
+        if (entry.previewUrl) map[entry.path] = entry.previewUrl;
+      }
+    }
+    previewsRef.current = map;
+  }, [attachmentEntries]);
   useEffect(() => {
     return () => {
       Object.values(previewsRef.current).forEach((url) =>
@@ -150,38 +167,66 @@ export function CreateInovasiDaerahPage() {
     };
   }, []);
 
-  const videoUrl = docValues.kualitasVideo?.trim() ?? "";
-  const videoValid = videoUrl.length > 0 && (() => { try { new URL(videoUrl); return true; } catch { return false; } })();
-
-  const filledDocs = useMemo(
-    () => docFields.filter((field) => Boolean(docValues[field.key])).length,
-    [docValues],
-  );
-  const filledTotal = filledDocs + (videoUrl ? 1 : 0);
-  const percent = Math.round((filledTotal / TOTAL_INDIKATOR) * 100);
-  const allDocsFilled =
-    docFields.every((field) => Boolean(docValues[field.key])) && videoValid;
-
-  const isFinishing = createMutation.isPending || saveIndikator.isPending;
-
-  async function handleUpload(key: string, file: File) {
+  async function handleAddFiles(key: string, files: File[]) {
     setUploadingKey(key);
     try {
-      const path = await uploadSingle(file);
-      const objectUrl = URL.createObjectURL(file);
-      setDocValues((prev) => ({ ...prev, [key]: path }));
-      setDocPreviews((prev) => {
-        if (prev[key]) URL.revokeObjectURL(prev[key]);
-        return { ...prev, [key]: objectUrl };
-      });
+      const newEntries: AttachmentEntry[] = [];
+      const newAtts: { field: string; path: string }[] = [];
+      for (const file of files) {
+        const path = await uploadSingle(file);
+        const objectUrl = URL.createObjectURL(file);
+        newEntries.push({ path, name: file.name, previewUrl: objectUrl });
+        newAtts.push({ field: key, path });
+      }
+      setAttachmentEntries((prev) => ({
+        ...prev,
+        [key]: [...(prev[key] ?? []), ...newEntries],
+      }));
+      setNewAttachments((prev) => [...prev, ...newAtts]);
       toast.success("Berkas terunggah");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengunggah berkas");
-      throw err;
     } finally {
       setUploadingKey(null);
     }
   }
+
+  function handleRemoveFile(key: string, index: number) {
+    const removed = attachmentEntries[key]?.[index];
+    if (!removed) return;
+    if (removed.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+    setAttachmentEntries((prev) => {
+      const list = [...(prev[key] ?? [])];
+      list.splice(index, 1);
+      return { ...prev, [key]: list };
+    });
+    setNewAttachments((prev) => {
+      const idx = prev.findIndex(
+        (a) => a.field === key && a.path === removed.path,
+      );
+      if (idx === -1) return prev;
+      const next = [...prev];
+      next.splice(idx, 1);
+      return next;
+    });
+  }
+
+  const videoUrl = docValues.kualitasVideo?.trim() ?? "";
+  const videoValid = videoUrl.length > 0 && (() => { try { new URL(videoUrl); return true; } catch { return false; } })();
+
+  const filledDocs = useMemo(
+    () =>
+      docFields.filter((f) => (attachmentEntries[f.key]?.length ?? 0) > 0)
+        .length,
+    [attachmentEntries],
+  );
+  const filledTotal = filledDocs + (videoValid ? 1 : 0);
+  const percent = Math.round((filledTotal / TOTAL_INDIKATOR) * 100);
+  const allDocsFilled =
+    docFields.every((f) => (attachmentEntries[f.key]?.length ?? 0) > 0) &&
+    videoValid;
+
+  const isFinishing = createMutation.isPending || saveIndikator.isPending;
 
   async function handleFinish() {
     if (!formValues) {
@@ -194,7 +239,13 @@ export function CreateInovasiDaerahPage() {
       const created = await createMutation.mutateAsync(
         formValues as InovasiDaerahCreateInput,
       );
-      await saveIndikator.mutateAsync({ id: created.id, values: docValues });
+      await saveIndikator.mutateAsync({
+        id: created.id,
+        values: {
+          kualitasVideo: docValues.kualitasVideo?.trim() || "",
+          attachments: newAttachments,
+        } as never,
+      });
       toast.success("Inovasi daerah berhasil dibuat");
       navigate(`/dashboard/inovasi-daerah/${created.id}`);
     } catch (err) {
@@ -254,8 +305,7 @@ export function CreateInovasiDaerahPage() {
               />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Seluruh dokumen dan URL video wajib dilengkapi sebelum lanjut ke
-              ringkasan.
+              Dokumen tidak harus lengkap untuk menyimpan. Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 10 MB per file.
             </p>
           </div>
 
@@ -268,16 +318,16 @@ export function CreateInovasiDaerahPage() {
                 </h2>
                 <div className="flex flex-col gap-3">
                   {group.fields.map((field) => {
-                    const value = docValues[field.key] ?? "";
+                    const files = attachmentEntries[field.key] ?? [];
                     return (
-                      <FileUploadField
+                      <MultiFileUploader
                         key={field.key}
                         label={field.label}
-                        value={value || undefined}
-                        accept="application/pdf,image/png,image/jpeg,image/webp"
-                        disabled={uploadingKey === field.key}
-                        href={docPreviews[field.key]}
-                        onChange={(file) => handleUpload(field.key, file)}
+                        files={files}
+                        disabled={uploadingKey !== null && uploadingKey !== field.key}
+                        uploading={uploadingKey === field.key}
+                        onChange={(fileList) => handleAddFiles(field.key, fileList)}
+                        onRemove={(index) => handleRemoveFile(field.key, index)}
                       />
                     );
                   })}
@@ -295,7 +345,7 @@ export function CreateInovasiDaerahPage() {
               <Input
                 id="kualitasVideo"
                 type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="Masukkan URL video"
                 value={videoUrl}
                 onChange={(event) =>
                   setDocValues((prev) => ({
@@ -388,29 +438,41 @@ export function CreateInovasiDaerahPage() {
                 </h3>
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {group.fields.map((field) => {
-                    const value = docValues[field.key] ?? "";
+                    const entries = attachmentEntries[field.key] ?? [];
                     return (
                       <li
                         key={field.key}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-2.5"
+                        className="space-y-1 rounded-lg border border-border bg-background p-2.5"
                       >
-                        <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex items-center gap-2 text-sm font-medium">
                           <FileText className="size-4 shrink-0 text-primary" />
-                          <span className="truncate text-sm">{field.label}</span>
+                          {field.label}
                         </span>
-                        {value ? (
-                          <a
-                            href={docPreviews[field.key]}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                          >
-                            <ExternalLink className="size-3.5" /> Lihat
-                          </a>
-                        ) : (
-                          <span className="shrink-0 text-xs text-muted-foreground">
+                        {entries.length === 0 ? (
+                          <span className="pl-6 text-xs text-muted-foreground">
                             Belum ada
                           </span>
+                        ) : (
+                          <ul className="space-y-1 pl-6">
+                            {entries.map((entry, i) => (
+                              <li
+                                key={i}
+                                className="flex items-center justify-between gap-2"
+                              >
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {entry.name}
+                                </span>
+                                <a
+                                  href={entry.previewUrl ?? entry.path}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                                >
+                                  <ExternalLink className="size-3.5" /> Lihat
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
                         )}
                       </li>
                     );

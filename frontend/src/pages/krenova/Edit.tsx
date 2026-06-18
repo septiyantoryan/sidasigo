@@ -71,13 +71,15 @@ export function EditKrenovaPage() {
             namaInovator5: detail.data.namaInovator5 ?? "",
             alamat: detail.data.alamat,
             nomorHp: detail.data.nomorHp,
-            dokumenProposal: detail.data.dokumenProposal,
-            lampiranOriginalitas: detail.data.lampiranOriginalitas,
-            lampiranIdentitas: detail.data.lampiranIdentitas,
+            abstrak: detail.data.abstrak ?? "",
+            dokumenProposal: detail.data.dokumenProposal ?? "",
+            lampiranOriginalitas: detail.data.lampiranOriginalitas ?? "",
+            lampiranIdentitas: detail.data.lampiranIdentitas ?? "",
           }}
           uploadFile={uploadSingle}
           isSubmitting={mutation.isPending}
           submitLabel="Perbarui Krenova"
+          existingAttachments={detail.data.attachments ?? []}
           onSubmit={async (input) => {
             await mutation.mutateAsync(input);
             toast.success("Krenova diperbarui");

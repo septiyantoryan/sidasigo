@@ -165,6 +165,9 @@ export function IndikatorPage() {
             style={{ width: `${percent}%` }}
           />
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 10 MB per file.
+        </p>
       </div>
 
       <form
@@ -183,7 +186,7 @@ export function IndikatorPage() {
           }
 
           // Build payload: existing values + new attachments
-          const payload: Record<string, string | null> = { ...values, kualitasVideo: values.kualitasVideo ?? null };
+          const payload: Record<string, string | null> = { ...values, kualitasVideo: values.kualitasVideo ?? "" };
 
           const attachmentsPayload = [...newAttachments];
 
@@ -242,7 +245,7 @@ export function IndikatorPage() {
             <Input
               id="kualitasVideo"
               type="url"
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="Masukkan URL video"
               value={merged("kualitasVideo")}
               onChange={(event) =>
                 setValues((prev) => ({

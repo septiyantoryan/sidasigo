@@ -207,9 +207,9 @@ model Krenova {
   alamat               String
   nomorHp              String
   abstrak              String?      @db.Text
-  dokumenProposal      String
-  lampiranOriginalitas String
-  lampiranIdentitas    String
+  dokumenProposal      String?
+  lampiranOriginalitas String?
+  lampiranIdentitas    String?
   status               Status       @default(Pending)
   alasanPenolakan      String?      @db.Text
   createdAt            DateTime     @default(now())
