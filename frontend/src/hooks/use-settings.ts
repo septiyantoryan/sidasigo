@@ -40,3 +40,36 @@ export function useUpdateSettings() {
     },
   });
 }
+
+export type HeroImage = { id: string; path: string; sort?: number };
+
+export function useAdminHeroImages() {
+  return useQuery<HeroImage[]>({
+    queryKey: ["hero-images", "admin"],
+    queryFn: () => api.get<HeroImage[]>("/api/admin/settings/hero-images"),
+  });
+}
+
+export function useUploadHeroImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (files: File[]) => {
+      const formData = new FormData();
+      for (const file of files) formData.append("files", file);
+      return api.upload<HeroImage[]>("/api/admin/settings/hero-images", formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hero-images"] });
+    },
+  });
+}
+
+export function useDeleteHeroImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ id: string }>(`/api/admin/settings/hero-images/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hero-images"] });
+    },
+  });
+}

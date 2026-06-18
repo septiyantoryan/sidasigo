@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { Trash2, UploadCloud } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -8,11 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dropzone } from "@/components/shared/Dropzone";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useAdminSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { api } from "@/lib/api";
+import {
+  useAdminSettings,
+  useAdminHeroImages,
+  useDeleteHeroImage,
+  useUpdateSettings,
+  useUploadHeroImages,
+} from "@/hooks/use-settings";
 import { handleImageError, resolveImageUrl } from "@/lib/image";
 
 const settingSchema = z.object({
@@ -36,19 +41,12 @@ const settingSchema = z.object({
 
 type SettingFormInput = z.infer<typeof settingSchema>;
 
-async function uploadHeroImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const result = await api.upload<{ path: string }>(
-    "/api/admin/settings/hero-image",
-    formData,
-  );
-  return result.path;
-}
-
 export function AdminSettingsPage() {
   const settings = useAdminSettings();
   const updateMutation = useUpdateSettings();
+  const heroImagesQuery = useAdminHeroImages();
+  const uploadHeroImages = useUploadHeroImages();
+  const deleteHeroImage = useDeleteHeroImage();
   const queryClient = useQueryClient();
 
   const form = useForm<SettingFormInput>({
@@ -82,7 +80,7 @@ export function AdminSettingsPage() {
     }
   }, [settings.data, reset]);
 
-  const heroImage = resolveImageUrl(settings.data?.heroImagePath);
+  const heroImages = heroImagesQuery.data ?? [];
   const { errors } = form.formState;
 
   if (settings.isLoading && !settings.data) {
@@ -150,29 +148,49 @@ export function AdminSettingsPage() {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Gambar Hero</Label>
-            {heroImage && (
-              <img
-                src={heroImage}
-                alt="Pratinjau gambar hero"
-                onError={handleImageError}
-                className="mb-2 h-40 w-full rounded-lg border border-border object-cover sm:max-w-md"
-              />
+            {heroImages.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {heroImages.map((img) => (
+                  <div
+                    key={img.id}
+                    className="group relative overflow-hidden rounded-lg border border-border"
+                  >
+                    <img
+                      src={resolveImageUrl(img.path) ?? undefined}
+                      alt="Hero"
+                      onError={handleImageError}
+                      className="h-32 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await deleteHeroImage.mutateAsync(img.id);
+                          toast.success("Gambar dihapus");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Gagal menghapus");
+                        }
+                      }}
+                      className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label="Hapus gambar"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-            <Dropzone
-              label="Unggah gambar (JPG/PNG/WEBP, maks 5MB)"
-              accept="image/jpeg,image/png,image/webp"
-              maxSize={5 * 1024 * 1024}
-              onChange={async (file) => {
+            <HeroImageDropzone
+              disabled={uploadHeroImages.isPending}
+              onUpload={async (files) => {
                 try {
-                  await uploadHeroImage(file);
-                  await queryClient.invalidateQueries({ queryKey: ["settings"] });
-                  toast.success("Gambar hero diperbarui");
+                  await uploadHeroImages.mutateAsync(files);
+                  await queryClient.invalidateQueries({ queryKey: ["hero-images"] });
+                  toast.success("Gambar hero ditambahkan");
                 } catch (err) {
-                  toast.error(
-                    err instanceof Error ? err.message : "Gagal mengunggah gambar",
-                  );
+                  toast.error(err instanceof Error ? err.message : "Gagal mengunggah gambar");
                   throw err;
                 }
               }}
@@ -246,6 +264,86 @@ export function AdminSettingsPage() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function HeroImageDropzone({
+  disabled,
+  onUpload,
+}: {
+  disabled?: boolean;
+  onUpload: (files: File[]) => Promise<void>;
+}) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const valid = Array.from(files).filter(
+      (f) => ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 5 * 1024 * 1024,
+    );
+    if (valid.length === 0) {
+      toast.error("Format tidak didukung atau ukuran melebihi 5MB");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      await onUpload(valid);
+    } finally {
+      setIsUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label="Unggah gambar hero"
+      aria-disabled={disabled}
+      onClick={() => !disabled && inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (!disabled) handleFiles(e.dataTransfer.files);
+      }}
+      onDragOver={(e) => { e.preventDefault(); if (!disabled) setIsDragging(true); }}
+      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+      className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
+        disabled ? "cursor-not-allowed opacity-60 border-border bg-muted/30"
+        : isDragging ? "border-primary bg-primary/5 cursor-pointer"
+        : "border-border bg-muted/30 cursor-pointer hover:border-primary/50 hover:bg-muted/50"
+      }`}
+    >
+      <input
+        id={inputId}
+        ref={inputRef}
+        data-testid="file-uploader-input"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        disabled={disabled}
+        className="sr-only"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <UploadCloud className="size-7 text-muted-foreground" aria-hidden />
+      <div className="space-y-0.5">
+        <p className="text-sm font-medium text-foreground">
+          {isUploading ? "Mengunggah..." : "Unggah gambar hero"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          JPG/PNG/WEBP · Maks 5MB · Bisa pilih multiple
+        </p>
+      </div>
     </div>
   );
 }

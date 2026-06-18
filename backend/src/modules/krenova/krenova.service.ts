@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Status, type Prisma } from "@prisma/client";
 import {
   deleteFile,
   deleteUploadFolder,
@@ -114,6 +114,12 @@ export async function updateKrenova(
   const { attachments, ...recordData } = data;
   const subdir = `krenova/${id}`;
   const next: Prisma.KrenovaUpdateInput = { ...recordData };
+
+  const existing = await findKrenovaById(id);
+  if (existing?.status === Status.Ditolak) {
+    next.status = Status.Pending;
+    next.alasanPenolakan = null;
+  }
 
   for (const field of [
     "dokumenProposal",

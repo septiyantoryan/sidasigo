@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Status, type Prisma } from "@prisma/client";
 import {
   deleteFile,
   deleteUploadFolder,
@@ -79,8 +79,13 @@ export function createInovasiDaerah(userId: string, data: Omit<Prisma.InovasiDae
   return createInovasi(userId, data);
 }
 
-export function updateInovasiDaerah(id: string, data: Prisma.InovasiDaerahUpdateInput) {
-  return updateInovasi(id, data);
+export async function updateInovasiDaerah(id: string, data: Prisma.InovasiDaerahUpdateInput) {
+  const existing = await findInovasiById(id);
+  const shouldReset = existing?.status === Status.Ditolak;
+  const payload: Prisma.InovasiDaerahUpdateInput = shouldReset
+    ? { ...data, status: Status.Pending, alasanPenolakan: null }
+    : data;
+  return updateInovasi(id, payload);
 }
 
 export async function deleteInovasiDaerah(id: string) {
