@@ -54,6 +54,10 @@ export const getKrenovaDetail: RequestHandler = async (request, response) => {
   if (!canViewPrivate) {
     // Explicit allowlist for public consumers: never leak applicant contact
     // details (alamat, nomorHp), document file paths, or userId/user.
+    // Only abstrak and fotoProduk (from attachments) are public.
+    const fotoProduk = (data.attachments ?? [])
+      .filter((a) => a.field === "fotoProduk")
+      .map((a) => a.path);
     success(response, {
       id: data.id,
       judulInovasi: data.judulInovasi,
@@ -67,6 +71,8 @@ export const getKrenovaDetail: RequestHandler = async (request, response) => {
       namaInovator3: data.namaInovator3,
       namaInovator4: data.namaInovator4,
       namaInovator5: data.namaInovator5,
+      abstrak: data.abstrak,
+      fotoProduk,
       status: data.status,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

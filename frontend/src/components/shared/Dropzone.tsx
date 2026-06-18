@@ -20,7 +20,7 @@ type DropzoneProps = {
 };
 
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024;
-const DEFAULT_ACCEPT = "application/pdf,image/png,image/jpeg,image/webp";
+const DEFAULT_ACCEPT = "application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 const ACCEPT_LABELS: Record<string, string> = {
   "application/pdf": "PDF",

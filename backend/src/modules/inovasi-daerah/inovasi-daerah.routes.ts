@@ -29,6 +29,6 @@ router.put("/:id", requireAuth, adminOrOpd, ownInovasiDaerah, requirePendingForO
 router.delete("/:id", requireAuth, adminOrOpd, ownInovasiDaerah, requirePendingForOwner("inovasi"), deleteInovasiDaerahHandler);
 router.put("/:id/approve", requireAuth, adminOnly, putApproveInovasiDaerah);
 router.put("/:id/reject", requireAuth, adminOnly, putRejectInovasiDaerah);
-router.put("/:id/indikator", requireAuth, opdOnly, ownInovasiDaerah, requirePendingForOwner("inovasi"), validate(updateIndikatorSchema), putIndikator);
+router.put("/:id/indikator", requireAuth, adminOrOpd, ownInovasiDaerah, requirePendingForOwner("inovasi"), validate(updateIndikatorSchema), putIndikator);
 
 export default router;

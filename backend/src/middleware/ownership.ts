@@ -82,8 +82,8 @@ export const requirePendingForOwner = (
 
   // Reuse entity data already fetched by ownInovasiDaerah / ownKrenova.
   if (request.owningEntity) {
-    if (request.owningEntity.status !== Status.Pending) {
-      error(response, "FORBIDDEN", "Hanya submission berstatus Pending yang dapat diubah atau dihapus.", 403);
+    if (request.owningEntity.status !== Status.Pending && request.owningEntity.status !== Status.Ditolak) {
+      error(response, "FORBIDDEN", "Hanya submission berstatus Pending atau Ditolak yang dapat diubah atau dihapus.", 403);
       return;
     }
     next();
@@ -113,11 +113,11 @@ export const requirePendingForOwner = (
     return;
   }
 
-  if (row.status !== Status.Pending) {
+  if (row.status !== Status.Pending && row.status !== Status.Ditolak) {
     error(
       response,
       "FORBIDDEN",
-      "Hanya submission berstatus Pending yang dapat diubah atau dihapus.",
+      "Hanya submission berstatus Pending atau Ditolak yang dapat diubah atau dihapus.",
       403,
     );
     return;

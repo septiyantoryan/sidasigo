@@ -53,7 +53,12 @@ export function useMyInovasiStats() {
 }
 
 export function useInovasiDaerahDetail(id: string | undefined) {
-  return useQuery<InovasiDaerah & { indikator?: Indikator | null }>({
+  return useQuery<
+    InovasiDaerah & {
+      indikator?: Indikator | null;
+      attachments?: { id: string; field: string; path: string; createdAt: string }[];
+    }
+  >({
     queryKey: ["inovasi-daerah", id],
     enabled: Boolean(id),
     queryFn: () => api.get(`/api/inovasi-daerah/${id}`),

@@ -1,11 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { KrenovaDataFields } from "@/components/krenova/KrenovaDataFields";
-import { FileUploadField } from "@/components/shared/FileUploadField";
-import { fileUrl } from "@/lib/api";
+import { MultiFileUploader } from "@/components/shared/MultiFileUploader";
 import {
   krenovaCreateSchema,
   type KrenovaCreateInput,
@@ -13,10 +12,11 @@ import {
 
 type KrenovaFormProps = {
   defaultValues?: Partial<KrenovaCreateInput>;
-  onSubmit: (input: KrenovaCreateInput) => Promise<unknown> | unknown;
+  onSubmit: (input: KrenovaCreateInput & { attachments?: { field: string; path: string }[] }) => Promise<unknown> | unknown;
   uploadFile: (file: File) => Promise<string>;
   isSubmitting?: boolean;
   submitLabel?: string;
+  existingAttachments?: { field: string; path: string }[];
 };
 
 const docFields = [
@@ -25,12 +25,15 @@ const docFields = [
   { key: "lampiranIdentitas", label: "Lampiran Identitas (KTP / Pelajar)" },
 ] as const;
 
+type FileEntry = { path: string; name: string; previewUrl?: string };
+
 export function KrenovaForm({
   defaultValues,
   onSubmit,
   uploadFile,
   isSubmitting,
   submitLabel = "Simpan Krenova",
+  existingAttachments,
 }: KrenovaFormProps) {
   const {
     register,
@@ -50,6 +53,15 @@ export function KrenovaForm({
   const [uploadingCount, setUploadingCount] = useState(0);
   const isUploading = uploadingCount > 0;
 
+  // Track new attachment uploads for submission.
+  const [newAttachments, setNewAttachments] = useState<{ field: string; path: string }[]>([]);
+  const [fotoFiles, setFotoFiles] = useState<FileEntry[]>(() =>
+    (existingAttachments ?? [])
+      .filter((a) => a.field === "fotoProduk")
+      .map((a) => ({ path: a.path, name: a.path.split(/[\\/]/).pop() ?? a.path })),
+  );
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+
   async function uploadTo(
     field: "dokumenProposal" | "lampiranOriginalitas" | "lampiranIdentitas",
     file: File,
@@ -66,8 +78,33 @@ export function KrenovaForm({
     }
   }
 
+  async function handleAddAttachment(key: string, files: File[]) {
+    setUploadingKey(key);
+    try {
+      for (const file of files) {
+        const path = await uploadFile(file);
+        setNewAttachments((prev) => [...prev, { field: key, path }]);
+        if (key === "fotoProduk") {
+          setFotoFiles((prev) => [...prev, { path, name: file.name, previewUrl: URL.createObjectURL(file) }]);
+        }
+      }
+      toast.success("Berkas terunggah");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengunggah berkas");
+    } finally {
+      setUploadingKey(null);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+    <form
+      onSubmit={handleSubmit(async (values) => {
+        const payload = { ...values, attachments: newAttachments.length > 0 ? newAttachments : undefined };
+        await onSubmit(payload);
+      })}
+      noValidate
+      className="space-y-6"
+    >
       <KrenovaDataFields
         register={register}
         watch={watch}
@@ -80,20 +117,37 @@ export function KrenovaForm({
           const value = watch(field.key);
           return (
             <div key={field.key} className="space-y-2">
-              <FileUploadField
+              <MultiFileUploader
                 label={field.label}
-                value={value || undefined}
-                href={value ? fileUrl(value) : undefined}
-                onChange={(file) => uploadTo(field.key, file)}
+                files={value ? [{ path: value, name: value.split(/[\\/]/).pop() ?? value }] : []}
+                disabled={isUploading}
+                onChange={(files) => uploadTo(field.key, files[0])}
+                accept="application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               />
               {errors[field.key] && (
-                <p role="alert" className="text-xs text-destructive">
-                  {errors[field.key]?.message}
-                </p>
+                <p role="alert" className="text-xs text-destructive">{errors[field.key]?.message}</p>
               )}
             </div>
           );
         })}
+
+        <MultiFileUploader
+          label="Foto Produk"
+          files={fotoFiles}
+          disabled={uploadingKey !== null}
+          uploading={uploadingKey === "fotoProduk"}
+          onChange={(files) => handleAddAttachment("fotoProduk", files)}
+          onRemove={(index) => {
+            setFotoFiles((prev) => prev.filter((_, i) => i !== index));
+            setNewAttachments((prev) => {
+              const atts = [...prev];
+              const idx = atts.findIndex((a, i) => a.field === "fotoProduk" && i === index);
+              if (idx >= 0) atts.splice(idx, 1);
+              return atts;
+            });
+          }}
+          accept="image/png,image/jpeg,image/webp"
+        />
       </div>
 
       <div className="flex justify-end">

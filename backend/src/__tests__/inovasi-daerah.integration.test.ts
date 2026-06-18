@@ -170,4 +170,15 @@ describe("inovasi daerah integration", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.status).toBe("Disetujui");
   });
+
+  it("admin can update inovasi data after approved", async () => {
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${inovasiId}`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test")
+      .send({ tujuan: "Tujuan baru oleh admin" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.tujuan).toBe("Tujuan baru oleh admin");
+  });
 });

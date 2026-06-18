@@ -15,6 +15,12 @@ const SIGNATURES: Record<string, number[][]> = {
   "image/webp": [
     [0x52, 0x49, 0x46, 0x46], // RIFF
   ],
+  "application/msword": [
+    [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1], // OLE2 container
+  ],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+    [0x50, 0x4b, 0x03, 0x04], // ZIP container
+  ],
 };
 
 function checkSignature(filePath: string, allowedTypes: Set<string>): string | null {

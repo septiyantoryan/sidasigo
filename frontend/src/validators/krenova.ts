@@ -17,6 +17,7 @@ const krenovaBaseShape = {
     .string()
     .min(1, "Nomor HP wajib diisi")
     .regex(/^\+?\d{8,15}$/, "Nomor HP hanya boleh berisi angka (8-15 digit)"),
+  abstrak: z.string().min(1, "Abstrak wajib diisi"),
   dokumenProposal: z.string().min(1, "Dokumen proposal wajib diunggah"),
   lampiranOriginalitas: z.string().min(1, "Lampiran originalitas wajib diunggah"),
   lampiranIdentitas: z.string().min(1, "Lampiran identitas wajib diunggah"),

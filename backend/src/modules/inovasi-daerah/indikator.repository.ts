@@ -34,3 +34,41 @@ export function upsertIndikator(inovasiDaerahId: string, data: IndikatorPayload)
     update: data,
   });
 }
+
+/** Get all attachments for an inovasi, grouped by field name. */
+export function findAttachmentsByInovasiId(inovasiDaerahId: string) {
+  return prisma.indikatorAttachment.findMany({
+    where: { inovasiDaerahId },
+    select: { id: true, field: true, path: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/** Create a single attachment record. */
+export function createAttachment(inovasiDaerahId: string, field: string, path: string) {
+  return prisma.indikatorAttachment.create({
+    data: { inovasiDaerahId, field, path },
+  });
+}
+
+/** Delete an attachment by id. */
+export function deleteAttachment(id: string) {
+  return prisma.indikatorAttachment.delete({ where: { id } });
+}
+
+/** Delete all attachments for a field of a given inovasi. */
+export function deleteAttachmentsByField(inovasiDaerahId: string, field: string) {
+  return prisma.indikatorAttachment.deleteMany({
+    where: { inovasiDaerahId, field },
+  });
+}
+
+/** Get all attachment file paths for an inovasi (for cleanup on delete). */
+export function findAttachmentPaths(inovasiDaerahId: string): Promise<string[]> {
+  return prisma.indikatorAttachment
+    .findMany({
+      where: { inovasiDaerahId },
+      select: { path: true },
+    })
+    .then((rows) => rows.map((r) => r.path));
+}

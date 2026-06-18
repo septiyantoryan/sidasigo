@@ -20,3 +20,25 @@ export function upsertSettings() {
 export function updateSettingsRecord(data: UpdateSettingInput) {
   return prisma.systemSetting.update({ where: { id: SINGLETON_ID }, data });
 }
+
+// --- HeroImage ---
+
+export function findAllHeroImages() {
+  return prisma.heroImage.findMany({ orderBy: { sort: "asc" } });
+}
+
+export function createHeroImage(path: string, sort?: number) {
+  return prisma.heroImage.create({ data: { path, sort: sort ?? 0 } });
+}
+
+export function deleteHeroImage(id: string) {
+  return prisma.heroImage.delete({ where: { id } });
+}
+
+export async function reorderHeroImages(ids: string[]) {
+  await prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.heroImage.update({ where: { id }, data: { sort: index } }),
+    ),
+  );
+}

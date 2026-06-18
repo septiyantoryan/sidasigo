@@ -14,13 +14,18 @@ import {
   getAdminSettings,
   getAdminSubmissions,
   getAdminUsers,
+  getHeroImages,
   postAdminUser,
   postHeroImage,
+  postHeroImages,
   putAdminSettings,
   putAdminUserPassword,
   putAdminUsername,
+  deleteHeroImageHandler,
+  putHeroImageReorder,
   uploadPublicSingle,
 } from "./admin.controller";
+import { uploadPublicArray } from "../../lib/public-upload";
 import risetAdminRoutes from "../riset/riset.admin.routes";
 import beritaAdminRoutes from "../berita/berita.admin.routes";
 import downloadAdminRoutes from "../download/download.admin.routes";
@@ -47,5 +52,9 @@ router.get("/krenova", getAdminKrenova);
 router.get("/settings", getAdminSettings);
 router.put("/settings", validate(updateSettingSchema), putAdminSettings);
 router.post("/settings/hero-image", uploadPublicSingle, validateFileSignature(["image/jpeg", "image/png", "image/webp"]), postHeroImage);
+router.get("/settings/hero-images", getHeroImages);
+router.post("/settings/hero-images", uploadPublicArray, validateFileSignature(["image/jpeg", "image/png", "image/webp"]), postHeroImages);
+router.delete("/settings/hero-images/:id", deleteHeroImageHandler);
+router.put("/settings/hero-images/reorder", putHeroImageReorder);
 
 export default router;

@@ -110,6 +110,14 @@ export const putRejectInovasiDaerah: RequestHandler = async (request, response) 
 };
 
 export const putIndikator: RequestHandler = async (request, response) => {
-  const result = await createOrUpdateIndikator(String(request.params.id), request.body);
+  const { attachments, ...indikatorData } = request.body as {
+    attachments?: { field: string; path: string }[];
+    [key: string]: unknown;
+  };
+  const result = await createOrUpdateIndikator(
+    String(request.params.id),
+    indikatorData,
+    attachments,
+  );
   success(response, result);
 };

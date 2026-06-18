@@ -1,6 +1,10 @@
 import { JenisInovasi, StatusPelaku } from "@prisma/client";
 import { z } from "zod";
 
+const attachmentsOption = z
+  .array(z.object({ field: z.string(), path: z.string() }))
+  .optional();
+
 const base = {
   judulInovasi: z.string().min(1),
   jenisInovasi: z.nativeEnum(JenisInovasi),
@@ -15,9 +19,11 @@ const base = {
   namaInovator5: z.string().optional(),
   alamat: z.string().min(1),
   nomorHp: z.string().regex(/^\+?\d{8,15}$/),
+  abstrak: z.string().min(1, "Abstrak wajib diisi"),
   dokumenProposal: z.string().min(1),
   lampiranOriginalitas: z.string().min(1),
   lampiranIdentitas: z.string().min(1),
+  attachments: attachmentsOption,
 };
 
 export const createKrenovaSchema = z

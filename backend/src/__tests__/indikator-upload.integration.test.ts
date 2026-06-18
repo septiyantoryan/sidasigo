@@ -50,7 +50,7 @@ describe("indikator upload integration", () => {
     await prisma.indikatorInovasiDaerah.deleteMany({ where: { inovasiDaerahId: inovasiId } });
     await prisma.inovasiDaerah.deleteMany({ where: { id: inovasiId } });
     await prisma.user.deleteMany({ where: { id: userId } });
-    fs.rmSync(path.join(process.cwd(), "uploads"), { recursive: true, force: true });
+    fs.rmSync(tmpDir, { recursive: true, force: true });
     await prisma.$disconnect();
   });
 
@@ -79,5 +79,59 @@ describe("indikator upload integration", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("FILE_TYPE_INVALID");
+  });
+
+  it("accepts .doc upload", async () => {
+    // OLE2 container magic bytes
+    const docBuf = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+    const docPath = path.join(tmpDir, "test.doc");
+    fs.writeFileSync(docPath, docBuf);
+
+    const response = await request(app)
+      .post("/api/upload/single")
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", userId)
+      .attach("file", docPath);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.path).toBeTruthy();
+  });
+
+  it("accepts .docx upload", async () => {
+    // ZIP container magic bytes
+    const docxBuf = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00]);
+    const docxPath = path.join(tmpDir, "test.docx");
+    fs.writeFileSync(docxPath, docxBuf);
+
+    const response = await request(app)
+      .post("/api/upload/single")
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", userId)
+      .attach("file", docxPath);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.path).toBeTruthy();
+  });
+
+  it("creates attachment records via indikator endpoint", async () => {
+    const attPath = path.join(tmpDir, `att-${Date.now()}.pdf`);
+    fs.writeFileSync(attPath, "attachment-data");
+
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${inovasiId}/indikator`)
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", userId)
+      .send({
+        attachments: [{ field: "regulasi", path: attPath }],
+      });
+
+    expect(response.status).toBe(200);
+
+    // Verify attachment was created
+    const atts = await prisma.indikatorAttachment.findMany({
+      where: { inovasiDaerahId: inovasiId },
+    });
+    expect(atts.length).toBeGreaterThan(0);
+    expect(atts.some((a) => a.field === "regulasi")).toBe(true);
   });
 });

@@ -131,6 +131,9 @@ export function AdminSubmissionReviewPage() {
                 indikator={
                   (data as never as { indikator?: Indikator | null }).indikator
                 }
+                attachments={
+                  (data as never as { attachments?: { field: string; path: string }[] | undefined }).attachments
+                }
               />
             </CardContent>
           </Card>

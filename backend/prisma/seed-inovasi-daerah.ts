@@ -38,7 +38,7 @@ const sampleIndikator: Prisma.IndikatorInovasiDaerahCreateWithoutInovasiDaerahIn
   kecepatanPenciptaan: "seeds/inovasi/penciptaan.pdf",
   kemanfaatan: "seeds/inovasi/kemanfaatan.pdf",
   monitoringEvaluasi: "seeds/inovasi/monev.pdf",
-  kualitasVideo: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  kualitasVideo: "https://vimeo.com/123456789",
 };
 
 type SeedItem = {
@@ -183,11 +183,13 @@ async function main() {
     ...buildItems(nonDigitalItems, JenisInovasi.Non_Digital, 7),
   ];
 
+  let attachmentCount = 0;
+
   for (const item of items) {
     const tglUjiCoba = new Date(2024, item.monthOffset - 1, 5);
     const tglPenerapan = new Date(2024, item.monthOffset - 1, 20);
 
-    await prisma.inovasiDaerah.create({
+    const inovasi = await prisma.inovasiDaerah.create({
       data: {
         userId: opd.id,
         namaInovasi: item.namaInovasi,
@@ -208,6 +210,19 @@ async function main() {
           : {}),
       },
     });
+
+    // For Disetujui inovasi, also add IndikatorAttachment records (multi-file demo)
+    if (item.withIndikator && attachmentCount < 10) {
+      const slug = item.namaInovasi.toLowerCase().replace(/\s+/g, "-");
+      await prisma.indikatorAttachment.createMany({
+        data: [
+          { inovasiDaerahId: inovasi.id, field: "regulasi", path: `seeds/inovasi/${slug}-regulasi.pdf` },
+          { inovasiDaerahId: inovasi.id, field: "regulasi", path: `seeds/inovasi/${slug}-peraturan.pdf` },
+          { inovasiDaerahId: inovasi.id, field: "sdm", path: `seeds/inovasi/${slug}-sdm.pdf` },
+        ],
+      });
+      attachmentCount++;
+    }
   }
 
   const pending = items.filter((i) => i.status === Status.Pending).length;

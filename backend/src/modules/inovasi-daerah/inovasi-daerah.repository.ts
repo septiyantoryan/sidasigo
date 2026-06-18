@@ -126,6 +126,7 @@ export function findInovasiById(id: string) {
     where: { id },
     include: {
       indikator: true,
+      attachments: true,
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -147,6 +148,7 @@ export function findVisibleInovasiById(id: string, user?: { id: string; role: st
     where,
     include: {
       indikator: true,
+      attachments: true,
       user: { select: { id: true, name: true, email: true } },
     },
   });

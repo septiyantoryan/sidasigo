@@ -1,5 +1,5 @@
 {
-  "name": "sidasi-go-server",
+  "name": "sidasigo-backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -25,6 +25,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
     "mariadb": "^3.4.5",
     "morgan": "^1.11.0",
     "multer": "^2.0.2",

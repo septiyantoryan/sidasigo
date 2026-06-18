@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import type { KrenovaCreateInput } from "@/validators/krenova";
 
 /** Field names handled by this component (used by the wizard's step-1 validation). */
@@ -31,6 +32,7 @@ export const krenovaDataFieldNames = [
   "namaInovator5",
   "alamat",
   "nomorHp",
+  "abstrak",
 ] as const;
 
 type KrenovaDataFieldsProps = {
@@ -204,6 +206,23 @@ export function KrenovaDataFields({
             </p>
           )}
         </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <Label htmlFor="abstrak">Abstrak</Label>
+        <Textarea
+          id="abstrak"
+          rows={4}
+          placeholder="Masukkan Abstrak"
+          {...register("abstrak")}
+        />
+        {errors.abstrak && (
+          <p role="alert" className="text-xs text-destructive">
+            {errors.abstrak.message}
+          </p>
+        )}
       </div>
     </div>
   );

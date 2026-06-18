@@ -11,6 +11,8 @@ describe("indikator rules integration", () => {
   let opdId = "";
   let pendingId = "";
   let approvedId = "";
+  let rejectedId = "";
+  let adminId = "";
 
   beforeAll(async () => {
     const opd = await prisma.user.create({
@@ -45,16 +47,31 @@ describe("indikator rules integration", () => {
       data: { ...baseData, namaInovasi: "Approved Indikator", status: Status.Disetujui },
     });
     approvedId = approved.id;
+
+    const rejected = await prisma.inovasiDaerah.create({
+      data: { ...baseData, namaInovasi: "Rejected Indikator", status: Status.Ditolak },
+    });
+    rejectedId = rejected.id;
+
+    const admin = await prisma.user.create({
+      data: {
+        email: `indik-admin-${Date.now()}@test.local`,
+        username: `indikadmin${Date.now()}`,
+        name: "Indikator Admin",
+        role: Role.Admin,
+      },
+    });
+    adminId = admin.id;
   });
 
   afterAll(async () => {
     await prisma.indikatorInovasiDaerah.deleteMany({
-      where: { inovasiDaerahId: { in: [pendingId, approvedId] } },
+      where: { inovasiDaerahId: { in: [pendingId, approvedId, rejectedId] } },
     });
     await prisma.inovasiDaerah.deleteMany({
-      where: { id: { in: [pendingId, approvedId] } },
+      where: { id: { in: [pendingId, approvedId, rejectedId] } },
     });
-    await prisma.user.deleteMany({ where: { id: opdId } });
+    await prisma.user.deleteMany({ where: { id: { in: [opdId, adminId] } } });
     await prisma.$disconnect();
   });
 
@@ -89,5 +106,26 @@ describe("indikator rules integration", () => {
 
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("allows admin to save indikator even when approved", async () => {
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${approvedId}/indikator`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId)
+      .send({ regulasi: "admin-regulasi.pdf" });
+
+    expect(response.status).toBe(200);
+  });
+
+  it("allows owner to save indikator when rejected", async () => {
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${rejectedId}/indikator`)
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", opdId)
+      .send({ sdm: "sdm.pdf" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.sdm).toBe("sdm.pdf");
   });
 });

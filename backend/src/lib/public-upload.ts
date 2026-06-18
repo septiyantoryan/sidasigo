@@ -32,6 +32,18 @@ export const uploadPublicSingle = multer({
   },
 }).single("file");
 
+export const uploadPublicArray = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 20 },
+  fileFilter: (_req, file, cb) => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      cb(new Error("FILE_TYPE_INVALID"));
+      return;
+    }
+    cb(null, true);
+  },
+}).array("files", 20);
+
 const allowedDocMimeTypes = new Set(["application/pdf"]);
 
 export const uploadPublicDocSingle = multer({

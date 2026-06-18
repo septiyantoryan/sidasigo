@@ -24,6 +24,15 @@ export const updateIndikatorSchema = z
     kemanfaatan: optionalDoc,
     monitoringEvaluasi: optionalDoc,
     kualitasVideo: z.string().url().optional().or(z.literal("")),
+    /** Multi-file attachments per field. Each field can have an arbitrary list of file paths. */
+    attachments: z
+      .array(
+        z.object({
+          field: z.string(),
+          path: z.string().min(1),
+        }),
+      )
+      .optional(),
   })
   .strict();
 

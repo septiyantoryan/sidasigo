@@ -28,7 +28,6 @@ import {
   TOTAL_INDIKATOR,
 } from "@/lib/indikator-fields";
 import { cn } from "@/lib/utils";
-import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import type { InovasiDaerahCreateInput } from "@/validators/inovasi-daerah";
 
 async function uploadSingle(file: File): Promise<string> {
@@ -152,8 +151,7 @@ export function CreateInovasiDaerahPage() {
   }, []);
 
   const videoUrl = docValues.kualitasVideo?.trim() ?? "";
-  const videoEmbed = videoUrl ? getYouTubeEmbedUrl(videoUrl) : null;
-  const videoValid = videoUrl.length > 0 && videoEmbed !== null;
+  const videoValid = videoUrl.length > 0 && (() => { try { new URL(videoUrl); return true; } catch { return false; } })();
 
   const filledDocs = useMemo(
     () => docFields.filter((field) => Boolean(docValues[field.key])).length,
@@ -189,11 +187,6 @@ export function CreateInovasiDaerahPage() {
     if (!formValues) {
       toast.error("Lengkapi data inovasi terlebih dahulu");
       setStep(1);
-      return;
-    }
-    if (!allDocsFilled) {
-      toast.error("Semua dokumen dan URL video wajib dilengkapi");
-      setStep(2);
       return;
     }
 
@@ -298,7 +291,7 @@ export function CreateInovasiDaerahPage() {
               Video Inovasi
             </h2>
             <div className="space-y-2">
-              <Label htmlFor="kualitasVideo">URL Video (YouTube)</Label>
+              <Label htmlFor="kualitasVideo">URL Video</Label>
               <Input
                 id="kualitasVideo"
                 type="url"
@@ -313,11 +306,11 @@ export function CreateInovasiDaerahPage() {
               />
               {videoUrl && !videoValid ? (
                 <p role="alert" className="text-xs text-destructive">
-                  URL video YouTube tidak valid.
+                  URL video tidak valid.
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Tempel tautan video YouTube yang mendokumentasikan inovasi.
+                  Tempel tautan video yang mendokumentasikan inovasi.
                 </p>
               )}
             </div>
@@ -329,7 +322,7 @@ export function CreateInovasiDaerahPage() {
             </Button>
             <Button
               onClick={() => setStep(3)}
-              disabled={!allDocsFilled || uploadingKey !== null}
+              disabled={uploadingKey !== null}
             >
               Lanjut ke Ringkasan <ArrowRight className="size-4" />
             </Button>
@@ -430,18 +423,15 @@ export function CreateInovasiDaerahPage() {
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Video Inovasi
               </h3>
-              {videoEmbed ? (
-                <div className="overflow-hidden rounded-xl border border-border">
-                  <div className="aspect-video w-full">
-                    <iframe
-                      src={videoEmbed}
-                      title="Pratinjau video inovasi"
-                      className="size-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
+              {videoValid ? (
+                <a
+                  href={videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  <ExternalLink className="size-4" /> Buka video
+                </a>
               ) : (
                 <p className="text-sm text-muted-foreground">Belum ada video.</p>
               )}

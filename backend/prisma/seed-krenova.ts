@@ -121,12 +121,14 @@ async function main() {
     ...buildItems(nonDigitalItems, 7),
   ];
 
+  let disetujuiSoFar = 0;
+
   for (const item of items) {
     const slug = slugify(item.judulInovasi);
     const waktuUjiCoba = new Date(2024, item.monthOffset - 1, 8);
     const waktuPenerapan = new Date(2024, item.monthOffset - 1, 22);
 
-    await prisma.krenova.create({
+    const krenova = await prisma.krenova.create({
       data: {
         userId: masyarakat.id,
         judulInovasi: item.judulInovasi,
@@ -142,12 +144,33 @@ async function main() {
         namaInovator5: item.inovator[4] ?? null,
         alamat: item.alamat,
         nomorHp: "081200000000",
+        abstrak: `${SEED_MARKER} ${item.judulInovasi} adalah inovasi yang bertujuan untuk meningkatkan kesejahteraan masyarakat Kabupaten Grobogan melalui penerapan teknologi tepat guna dan pemberdayaan sumber daya lokal.`,
         dokumenProposal: `seeds/krenova/${slug}-proposal.pdf`,
         lampiranOriginalitas: `seeds/krenova/${slug}-originalitas.pdf`,
         lampiranIdentitas: `seeds/krenova/${slug}-identitas.pdf`,
         status: item.status,
       },
     });
+
+    // For the first 10 Disetujui krenova, also add KrenovaAttachment (foto produk)
+    if (item.status === Status.Disetujui && disetujuiSoFar < 10) {
+      const slugClean = slug.replace(/\s+/g, "-").toLowerCase();
+      await prisma.krenovaAttachment.createMany({
+        data: [
+          {
+            krenovaId: krenova.id,
+            field: "fotoProduk",
+            path: `seeds/krenova/${slugClean}-foto1.jpg`,
+          },
+          {
+            krenovaId: krenova.id,
+            field: "fotoProduk",
+            path: `seeds/krenova/${slugClean}-foto2.jpg`,
+          },
+        ],
+      });
+      disetujuiSoFar++;
+    }
   }
 
   const pending = items.filter((i) => i.status === Status.Pending).length;

@@ -6,7 +6,15 @@ import {
 } from "../../utils/file";
 import { buildPaginated } from "../../utils/pagination";
 import type { AdminInovasiQuery, InovasiListQuery } from "../shared/pagination.schema";
-import { findIndikatorByInovasiId, type IndikatorPayload, upsertIndikator } from "./indikator.repository";
+import {
+  createAttachment,
+  deleteAttachmentsByField,
+  findAttachmentsByInovasiId,
+  findIndikatorByInovasiId,
+  findAttachmentPaths,
+  type IndikatorPayload,
+  upsertIndikator,
+} from "./indikator.repository";
 import {
   countMyInovasiStats,
   createInovasi,
@@ -90,7 +98,11 @@ export async function deleteInovasiDaerah(id: string) {
     }
   }
 
-  // Cascade-deletes indikator row via FK.
+  // Snapshot attachment file paths as well.
+  const attachmentPaths = await findAttachmentPaths(id);
+  filePaths.push(...attachmentPaths);
+
+  // Cascade-deletes indikator row and attachment rows via FK.
   await deleteInovasi(id);
 
   // Clean up disk files after the DB row is gone.
@@ -107,7 +119,11 @@ export function rejectInovasiDaerah(id: string, reason?: string) {
   return setInovasiRejected(id, reason);
 }
 
-export async function createOrUpdateIndikator(inovasiDaerahId: string, data: IndikatorPayload) {
+export async function createOrUpdateIndikator(
+  inovasiDaerahId: string,
+  data: IndikatorPayload,
+  attachments?: { field: string; path: string }[],
+) {
   // Relocate any newly-uploaded (staging) document files into inovasi/<id>/
   // before persisting. Unchanged values already carry a separator and are left
   // untouched by the helper; the kualitasVideo URL is not a file field.
@@ -137,5 +153,26 @@ export async function createOrUpdateIndikator(inovasiDaerahId: string, data: Ind
     }
   }
 
-  return upsertIndikator(inovasiDaerahId, payload);
+  const result = await upsertIndikator(inovasiDaerahId, payload);
+
+  // Handle multi-file attachments: replace all attachments per field.
+  if (attachments) {
+    // Group attachments by field and delete old ones.
+    const grouped = new Map<string, string[]>();
+    for (const att of attachments) {
+      const relocated = await relocateUploadedFile(att.path, subdir);
+      const list = grouped.get(att.field) ?? [];
+      list.push(relocated);
+      grouped.set(att.field, list);
+    }
+
+    for (const [field, paths] of grouped) {
+      await deleteAttachmentsByField(inovasiDaerahId, field);
+      for (const path of paths) {
+        await createAttachment(inovasiDaerahId, field, path);
+      }
+    }
+  }
+
+  return result;
 }

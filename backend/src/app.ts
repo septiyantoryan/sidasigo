@@ -5,6 +5,7 @@ import morgan from "morgan";
 import { toNodeHandler } from "better-auth/node";
 import adminRoutes from "./modules/admin/admin.routes";
 import { auth } from "./lib/auth";
+import { authLimiter, globalLimiter } from "./lib/rate-limit";
 import { errorHandler } from "./middleware/error";
 import fileRoutes from "./modules/files/file.routes";
 import inovasiDaerahRoutes from "./modules/inovasi-daerah/inovasi-daerah.routes";
@@ -67,14 +68,17 @@ export function createApp() {
   // User self-service routes live under /api/auth/user but must be registered
   // BEFORE the better-auth catch-all so they are not swallowed by it. They get
   // their own JSON parser since better-auth is mounted before express.json.
-  app.use("/api/auth/user", express.json(), userRoutes);
+  app.use("/api/auth/user", authLimiter, express.json(), userRoutes);
 
   // Better Auth handler must be mounted BEFORE express.json so that the
   // body is not consumed by the JSON parser.
-  app.all("/api/auth/*splat", toNodeHandler(auth));
+  app.all("/api/auth/*splat", authLimiter, toNodeHandler(auth));
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Global rate limiter for all /api/* routes.
+  app.use("/api", globalLimiter);
 
   app.use("/api/admin", adminRoutes);
   app.use("/api/inovasi-daerah", inovasiDaerahRoutes);

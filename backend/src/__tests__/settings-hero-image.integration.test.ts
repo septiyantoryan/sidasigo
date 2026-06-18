@@ -13,6 +13,9 @@ describe("settings hero-image upload guards", () => {
   let opdId = "";
 
   beforeAll(async () => {
+    // Clean slate for hero images
+    await prisma.heroImage.deleteMany({});
+
     const admin = await prisma.user.create({
       data: {
         email: `hero-admin-${suffix}@test.local`,
@@ -35,6 +38,7 @@ describe("settings hero-image upload guards", () => {
   });
 
   afterAll(async () => {
+    await prisma.heroImage.deleteMany({});
     await prisma.user.deleteMany({ where: { id: { in: [adminId, opdId] } } });
     await prisma.$disconnect();
   });
@@ -77,5 +81,82 @@ describe("settings hero-image upload guards", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.path).toMatch(/^\/api\/public-files\//);
+  });
+
+  // -- New multi-image hero carousel endpoints --
+
+  it("GET hero-images returns empty array initially", async () => {
+    const response = await request(app)
+      .get("/api/admin/settings/hero-images")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBe(0);
+  });
+
+  it("POST hero-images uploads multiple files", async () => {
+    const png1 = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const png2 = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    const response = await request(app)
+      .post("/api/admin/settings/hero-images")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId)
+      .attach("files", png1, "hero1.png")
+      .attach("files", png2, "hero2.png");
+
+    expect(response.status).toBe(201);
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBe(2);
+  });
+
+  it("GET hero-images returns uploaded images", async () => {
+    const response = await request(app)
+      .get("/api/admin/settings/hero-images")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBe(2);
+    for (const img of response.body.data) {
+      expect(img.id).toBeTruthy();
+      expect(img.path).toMatch(/^\/api\/public-files\//);
+    }
+  });
+
+  it("non-admin cannot access hero-images endpoints", async () => {
+    const response = await request(app)
+      .get("/api/admin/settings/hero-images")
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", opdId);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("DELETE hero-image removes an image", async () => {
+    // Fetch current images to get one ID
+    const list = await request(app)
+      .get("/api/admin/settings/hero-images")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId);
+
+    const id = list.body.data[0].id;
+
+    const response = await request(app)
+      .delete(`/api/admin/settings/hero-images/${id}`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId);
+
+    expect(response.status).toBe(200);
+
+    // Verify count decreased
+    const list2 = await request(app)
+      .get("/api/admin/settings/hero-images")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId);
+
+    expect(list2.body.data.length).toBe(1);
   });
 });

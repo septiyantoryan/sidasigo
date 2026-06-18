@@ -1,6 +1,6 @@
 packages:
-  - "client"
-  - "server"
+  - "frontend"
+  - "backend"
 
 overrides:
   react: "19.2.7"

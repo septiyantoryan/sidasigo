@@ -150,7 +150,10 @@ export function findVisibleKrenovaById(id: string, user?: { id: string; role: st
 
   return prisma.krenova.findFirst({
     where,
-    include: { user: { select: { id: true, name: true, email: true } } },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      attachments: { select: { id: true, field: true, path: true, createdAt: true } },
+    },
   });
 }
 
@@ -175,4 +178,30 @@ export function setKrenovaApproved(id: string) {
 
 export function setKrenovaRejected(id: string, reason?: string) {
   return prisma.krenova.update({ where: { id }, data: { status: Status.Ditolak, alasanPenolakan: reason || null } });
+}
+
+// --- KrenovaAttachment ---
+
+export function findKrenovaAttachments(krenovaId: string) {
+  return prisma.krenovaAttachment.findMany({
+    where: { krenovaId },
+    select: { id: true, field: true, path: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export function createKrenovaAttachment(krenovaId: string, field: string, path: string) {
+  return prisma.krenovaAttachment.create({ data: { krenovaId, field, path } });
+}
+
+export function deleteKrenovaAttachmentsByField(krenovaId: string, field: string) {
+  return prisma.krenovaAttachment.deleteMany({ where: { krenovaId, field } });
+}
+
+export async function findKrenovaAttachmentPaths(krenovaId: string): Promise<string[]> {
+  const rows = await prisma.krenovaAttachment.findMany({
+    where: { krenovaId },
+    select: { path: true },
+  });
+  return rows.map((r) => r.path);
 }

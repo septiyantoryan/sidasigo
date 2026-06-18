@@ -1,20 +1,21 @@
 import { ArrowLeft } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { FileUploadField } from "@/components/shared/FileUploadField";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { MultiFileUploader } from "@/components/shared/MultiFileUploader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   useInovasiDaerahDetail,
   useSaveIndikator,
 } from "@/hooks/use-inovasi-daerah";
-import { api, fileUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 import { docFields, docGroups, TOTAL_INDIKATOR } from "@/lib/indikator-fields";
+import type { Indikator, IndikatorAttachment } from "@/types";
 
 async function uploadSingle(file: File): Promise<string> {
   const formData = new FormData();
@@ -26,6 +27,12 @@ async function uploadSingle(file: File): Promise<string> {
   return result.path;
 }
 
+type AttachmentEntry = {
+  path: string;
+  name: string;
+  previewUrl?: string;
+};
+
 export function IndikatorPage() {
   const params = useParams();
   const navigate = useNavigate();
@@ -34,9 +41,35 @@ export function IndikatorPage() {
   const saveMutation = useSaveIndikator(id);
 
   const [values, setValues] = useState<Record<string, string>>({});
+  const [attachmentEntries, setAttachmentEntries] = useState<
+    Record<string, AttachmentEntry[]>
+  >({});
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const previewsRef = useRef<Record<string, string>>({});
+  const [newAttachments, setNewAttachments] = useState<
+    { field: string; path: string }[]
+  >([]);
+
+  useEffect(() => {
+    previewsRef.current = {};
+  }, []);
 
   const indikator = detail.data?.indikator ?? null;
+  const attachments = detail.data?.attachments as IndikatorAttachment[] | undefined;
+
+  // Initialize attachment entries from server data.
+  useEffect(() => {
+    if (!attachments) return;
+    const entries: Record<string, AttachmentEntry[]> = {};
+    for (const att of attachments) {
+      if (!entries[att.field]) entries[att.field] = [];
+      entries[att.field].push({
+        path: att.path,
+        name: att.path.split(/[\\/]/).pop() ?? att.path,
+      });
+    }
+    setAttachmentEntries(entries);
+  }, [attachments]);
 
   const merged = (key: string): string => {
     if (key in values) return values[key];
@@ -45,11 +78,14 @@ export function IndikatorPage() {
   };
 
   const filledCount = useMemo(() => {
-    return [...docFields.map((f) => f.key), "kualitasVideo"].filter((key) =>
-      Boolean(merged(key)),
-    ).length;
+    const docWithAttachments = docFields.filter((f) => {
+      const entries = attachmentEntries[f.key];
+      return (entries && entries.length > 0) || Boolean(merged(f.key));
+    }).length;
+    const hasVideo = Boolean(merged("kualitasVideo"));
+    return docWithAttachments + (hasVideo ? 1 : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, indikator]);
+  }, [values, indikator, attachmentEntries]);
 
   const percent = Math.round((filledCount / TOTAL_INDIKATOR) * 100);
 
@@ -71,17 +107,36 @@ export function IndikatorPage() {
     );
   }
 
-  async function handleUpload(key: string, file: File) {
+  async function handleAddFiles(key: string, files: File[]) {
     setUploadingKey(key);
     try {
-      const path = await uploadSingle(file);
-      setValues((prev) => ({ ...prev, [key]: path }));
+      const newEntries: AttachmentEntry[] = [];
+      const newAtts: { field: string; path: string }[] = [];
+      for (const file of files) {
+        const path = await uploadSingle(file);
+        const objectUrl = URL.createObjectURL(file);
+        newEntries.push({ path, name: file.name, previewUrl: objectUrl });
+        newAtts.push({ field: key, path });
+      }
+      setAttachmentEntries((prev) => ({
+        ...prev,
+        [key]: [...(prev[key] ?? []), ...newEntries],
+      }));
+      setNewAttachments((prev) => [...prev, ...newAtts]);
       toast.success("Berkas terunggah");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengunggah berkas");
     } finally {
       setUploadingKey(null);
     }
+  }
+
+  async function handleRemoveFile(key: string, index: number) {
+    setAttachmentEntries((prev) => {
+      const list = [...(prev[key] ?? [])];
+      list.splice(index, 1);
+      return { ...prev, [key]: list };
+    });
   }
 
   return (
@@ -95,9 +150,7 @@ export function IndikatorPage() {
         <ArrowLeft className="size-4" /> Kembali
       </Button>
 
-      <PageHeader
-        title="Indikator Inovasi Daerah"
-      />
+      <PageHeader title="Indikator Inovasi Daerah" />
 
       <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3">
@@ -119,11 +172,6 @@ export function IndikatorPage() {
         onSubmit={async (event) => {
           event.preventDefault();
 
-          if (Object.keys(values).length === 0) {
-            toast.info("Tidak ada perubahan untuk disimpan");
-            return;
-          }
-
           const video = values.kualitasVideo?.trim();
           if (video) {
             try {
@@ -134,8 +182,21 @@ export function IndikatorPage() {
             }
           }
 
+          // Build payload: existing values + new attachments
+          const payload: Record<string, string | null> = { ...values, kualitasVideo: values.kualitasVideo ?? null };
+
+          const attachmentsPayload = [...newAttachments];
+
+          if (Object.keys(values).length === 0 && attachmentsPayload.length === 0) {
+            toast.info("Tidak ada perubahan untuk disimpan");
+            return;
+          }
+
           try {
-            await saveMutation.mutateAsync(values);
+            await saveMutation.mutateAsync({
+              ...payload,
+              attachments: attachmentsPayload,
+            } as never);
             toast.success("Indikator tersimpan");
             navigate(`/dashboard/inovasi-daerah/${id}`);
           } catch (err) {
@@ -154,16 +215,16 @@ export function IndikatorPage() {
               </h2>
               <div className="flex flex-col gap-3">
                 {group.fields.map((field) => {
-                  const value = merged(field.key);
+                  const files = attachmentEntries[field.key] ?? [];
                   return (
-                    <FileUploadField
+                    <MultiFileUploader
                       key={field.key}
                       label={field.label}
-                      value={value || undefined}
-                      accept="application/pdf,image/png,image/jpeg,image/webp"
-                      disabled={uploadingKey === field.key}
-                      href={value ? fileUrl(value) : undefined}
-                      onChange={(file) => handleUpload(field.key, file)}
+                      files={files}
+                      disabled={uploadingKey !== null && uploadingKey !== field.key}
+                      uploading={uploadingKey === field.key}
+                      onChange={(fileList) => handleAddFiles(field.key, fileList)}
+                      onRemove={(index) => handleRemoveFile(field.key, index)}
                     />
                   );
                 })}
@@ -177,7 +238,7 @@ export function IndikatorPage() {
             Video Inovasi
           </h2>
           <div className="space-y-2">
-            <Label htmlFor="kualitasVideo">URL Video (YouTube)</Label>
+            <Label htmlFor="kualitasVideo">URL Video</Label>
             <Input
               id="kualitasVideo"
               type="url"
@@ -191,7 +252,7 @@ export function IndikatorPage() {
               }
             />
             <p className="text-xs text-muted-foreground">
-              Tempel tautan video YouTube yang mendokumentasikan inovasi.
+              Tempel tautan video yang mendokumentasikan inovasi.
             </p>
           </div>
         </section>
@@ -201,8 +262,7 @@ export function IndikatorPage() {
             type="submit"
             disabled={
               saveMutation.isPending ||
-              uploadingKey !== null ||
-              Object.keys(values).length === 0
+              uploadingKey !== null
             }
           >
             Simpan Indikator

@@ -8,9 +8,13 @@ import { buildPaginated } from "../../utils/pagination";
 import type { AdminKrenovaQuery, KrenovaListQuery } from "../shared/pagination.schema";
 import {
   countMyKrenovaStats,
+  createKrenovaAttachment,
   createKrenovaRecord,
+  deleteKrenovaAttachmentsByField,
   deleteKrenovaRecord,
   findAdminKrenovaRows,
+  findKrenovaAttachmentPaths,
+  findKrenovaAttachments,
   findKrenovaById,
   findKrenovaFiles,
   findMyKrenovaRows,
@@ -20,6 +24,26 @@ import {
   setKrenovaRejected,
   updateKrenovaRecord,
 } from "./krenova.repository";
+
+async function processAttachments(
+  krenovaId: string,
+  attachments: { field: string; path: string }[],
+) {
+  const subdir = `krenova/${krenovaId}`;
+  const grouped = new Map<string, string[]>();
+  for (const att of attachments) {
+    const relocated = await relocateUploadedFile(att.path, subdir);
+    const list = grouped.get(att.field) ?? [];
+    list.push(relocated);
+    grouped.set(att.field, list);
+  }
+  for (const [field, paths] of grouped) {
+    await deleteKrenovaAttachmentsByField(krenovaId, field);
+    for (const path of paths) {
+      await createKrenovaAttachment(krenovaId, field, path);
+    }
+  }
+}
 
 export async function findKrenovaPaginated(input: KrenovaListQuery) {
   const [items, total] = await findPublicKrenovaRows(input);
@@ -41,11 +65,15 @@ export async function findAdminKrenovaPaginated(input: AdminKrenovaQuery) {
   return buildPaginated(items, total, input.page, input.pageSize);
 }
 
-export async function createKrenova(userId: string, data: Prisma.KrenovaUncheckedCreateInput) {
-  const created = await createKrenovaRecord(userId, data);
+export async function createKrenova(
+  userId: string,
+  data: Prisma.KrenovaUncheckedCreateInput & {
+    attachments?: { field: string; path: string }[];
+  },
+) {
+  const { attachments, ...recordData } = data;
+  const created = await createKrenovaRecord(userId, recordData);
 
-  // Files were uploaded to the staging root before the record existed; move
-  // them into krenova/<id>/ and persist the relative paths.
   const subdir = `krenova/${created.id}`;
   const [dokumenProposal, lampiranOriginalitas, lampiranIdentitas] = await Promise.all([
     relocateUploadedFile(created.dokumenProposal, subdir),
@@ -58,24 +86,34 @@ export async function createKrenova(userId: string, data: Prisma.KrenovaUnchecke
     lampiranOriginalitas !== created.lampiranOriginalitas ||
     lampiranIdentitas !== created.lampiranIdentitas;
 
-  if (!changed) return created;
+  if (changed) {
+    await updateKrenovaRecord(created.id, {
+      dokumenProposal,
+      lampiranOriginalitas,
+      lampiranIdentitas,
+    });
+  }
 
-  return updateKrenovaRecord(created.id, {
-    dokumenProposal,
-    lampiranOriginalitas,
-    lampiranIdentitas,
-  });
+  if (attachments && attachments.length > 0) {
+    await processAttachments(created.id, attachments);
+  }
+
+  return created;
 }
 
 export { findKrenovaById };
 
 export { findVisibleKrenovaById };
 
-export async function updateKrenova(id: string, data: Prisma.KrenovaUpdateInput) {
-  // Relocate any newly-uploaded (staging) files into krenova/<id>/. Unchanged
-  // values already carry a separator and are left untouched by the helper.
+export async function updateKrenova(
+  id: string,
+  data: Prisma.KrenovaUpdateInput & {
+    attachments?: { field: string; path: string }[];
+  },
+) {
+  const { attachments, ...recordData } = data;
   const subdir = `krenova/${id}`;
-  const next: Prisma.KrenovaUpdateInput = { ...data };
+  const next: Prisma.KrenovaUpdateInput = { ...recordData };
 
   for (const field of [
     "dokumenProposal",
@@ -88,11 +126,18 @@ export async function updateKrenova(id: string, data: Prisma.KrenovaUpdateInput)
     }
   }
 
-  return updateKrenovaRecord(id, next);
+  const result = await updateKrenovaRecord(id, next);
+
+  if (attachments && attachments.length > 0) {
+    await processAttachments(id, attachments);
+  }
+
+  return result;
 }
 
 export async function deleteKrenova(id: string) {
   const krenova = await findKrenovaFiles(id);
+  const filePaths: string[] = [];
 
   if (krenova) {
     for (const filePath of [
@@ -101,13 +146,17 @@ export async function deleteKrenova(id: string) {
       krenova.lampiranIdentitas,
     ]) {
       if (filePath) {
-        await deleteFile(filePath);
+        filePaths.push(filePath);
       }
     }
   }
 
+  // Also get attachment paths
+  const attPaths = await findKrenovaAttachmentPaths(id);
+  filePaths.push(...attPaths);
+
   const result = await deleteKrenovaRecord(id);
-  // Remove the per-record folder (and any stray files) after the row is gone.
+  await Promise.all(filePaths.map((p) => deleteFile(p)));
   await deleteUploadFolder(`krenova/${id}`);
   return result;
 }

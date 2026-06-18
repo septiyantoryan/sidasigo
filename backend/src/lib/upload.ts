@@ -4,7 +4,7 @@ import multer from "multer";
 
 const uploadRoot = path.join(process.cwd(), "uploads");
 
-const allowedMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const allowedMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {

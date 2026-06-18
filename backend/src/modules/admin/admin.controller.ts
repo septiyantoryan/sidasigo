@@ -11,6 +11,12 @@ import {
   adminUsersQuerySchema,
 } from "../shared/pagination.schema";
 import { getSettings, updateSettings } from "../settings/setting.service";
+import {
+  createHeroImage,
+  deleteHeroImage,
+  findAllHeroImages,
+  reorderHeroImages,
+} from "../settings/setting.repository";
 import { createOpdUser, deleteUser, listGoogleUsers, listUsers } from "../users/user.service";
 import { changePasswordAdminSchema, changeUsernameAdminSchema } from "../users/user.schema";
 import { adminChangePassword, adminChangeUsername } from "../users/user.service";
@@ -94,6 +100,37 @@ export const postHeroImage: RequestHandler = async (request, response) => {
   const publicPath = `/api/public-files/${request.file.filename}`;
   const data = await updateSettings({ heroImagePath: publicPath });
   success(response, { path: publicPath, setting: data }, 201);
+};
+
+export const postHeroImages: RequestHandler = async (request, response) => {
+  const files = request.files as Express.Multer.File[] | undefined;
+  if (!files || files.length === 0) {
+    error(response, "VALIDATION_ERROR", "File is required", 400);
+    return;
+  }
+  const results = await Promise.all(
+    files.map(async (file, i) => {
+      const path = `/api/public-files/${file.filename}`;
+      await createHeroImage(path, i);
+      return { path };
+    }),
+  );
+  success(response, results, 201);
+};
+
+export const getHeroImages: RequestHandler = async (_request, response) => {
+  const images = await findAllHeroImages();
+  success(response, images);
+};
+
+export const deleteHeroImageHandler: RequestHandler = async (request, response) => {
+  await deleteHeroImage(String(request.params.id));
+  success(response, { id: request.params.id });
+};
+
+export const putHeroImageReorder: RequestHandler = async (request, response) => {
+  await reorderHeroImages(request.body.ids);
+  success(response, { ok: true });
 };
 
 export const putAdminUserPassword: RequestHandler = async (request, response) => {

@@ -142,7 +142,7 @@ export function DaftarInovasiPage() {
                             Detail
                           </Link>
                         </Button>
-                        {item.status === "Pending" && (
+                        {item.status !== "Disetujui" && (
                           <Button asChild variant="outline" size="sm">
                             <Link to={`/inovasi-daerah/${item.id}/edit`}>Edit</Link>
                           </Button>
@@ -152,7 +152,7 @@ export function DaftarInovasiPage() {
                             Indikator
                           </Link>
                         </Button>
-                        {item.status === "Pending" && (
+                        {item.status !== "Disetujui" && (
                           <Button
                             size="sm"
                             variant="destructive"

@@ -75,4 +75,12 @@ describe("system settings integration", () => {
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe("FORBIDDEN");
   });
+
+  it("returns empty hero images array on public GET", async () => {
+    const response = await request(app).get("/api/settings/hero-images");
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(Array.isArray(response.body.data)).toBe(true);
+  });
 });

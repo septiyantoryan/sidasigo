@@ -52,4 +52,17 @@ describe("admin sub-routes auth (nested riset/berita/download)", () => {
       expect(response.status).toBe(200);
     });
   }
+
+  it("allows admin to PUT indikator endpoint", async () => {
+    const response = await request(app)
+      .put("/api/inovasi-daerah/test-id/indikator")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test")
+      .send({ regulasi: "test.pdf" });
+
+    // The id "test-id" won't exist, so it will return 404 (NOT_FOUND from ownInovasiDaerah middleware).
+    // But the key assertion is it's NOT 401 or 403 — admin is authenticated and has role access.
+    expect(response.status).not.toBe(401);
+    expect(response.status).not.toBe(403);
+  });
 });

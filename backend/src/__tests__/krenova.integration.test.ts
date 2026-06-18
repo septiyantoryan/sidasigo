@@ -100,6 +100,7 @@ describe("krenova integration", () => {
         namaInovator1: "C",
         alamat: "Alamat",
         nomorHp: "08123456789",
+        abstrak: "Abstrak singkat",
         dokumenProposal: "proposal.pdf",
         lampiranOriginalitas: "ori.pdf",
         lampiranIdentitas: "id.pdf",
@@ -185,5 +186,66 @@ describe("krenova integration", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.status).toBe("Ditolak");
+  });
+
+  it("includes abstrak in public detail for rejected krenova", async () => {
+    const response = await request(app)
+      .get(`/api/krenova/${pendingId}`)
+      .set("x-test-role", "Masyarakat")
+      .set("x-test-user-id", masyarakatId);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.abstrak).toBeDefined();
+  });
+
+  it("admin can edit krenova data", async () => {
+    const response = await request(app)
+      .put(`/api/krenova/${pendingId}`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test")
+      .send({ judulInovasi: "Diedit Admin" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.judulInovasi).toBe("Diedit Admin");
+  });
+
+  it("create krenova with attachments and verify in detail", async () => {
+    const create = await request(app)
+      .post("/api/krenova")
+      .set("x-test-role", "Masyarakat")
+      .set("x-test-user-id", masyarakatId)
+      .send({
+        judulInovasi: "Krenova Attachments",
+        jenisInovasi: "Non_Digital",
+        waktuUjiCoba: "2025-03-01",
+        waktuPenerapan: "2025-04-01",
+        tahapInovasi: "Uji",
+        statusPelaku: "Umum",
+        namaInovator1: "Test",
+        alamat: "Alamat",
+        nomorHp: "08123456789",
+        abstrak: "Test abstrak dengan lampiran",
+        dokumenProposal: "proposal.pdf",
+        lampiranOriginalitas: "ori.pdf",
+        lampiranIdentitas: "id.pdf",
+        attachments: [{ field: "fotoProduk", path: "foto1.jpg" }, { field: "fotoProduk", path: "foto2.jpg" }],
+      });
+
+    expect(create.status).toBe(201);
+
+    // Public detail should include abstrak and fotoProduk
+    const newId = create.body.data.id;
+
+    // Approve so it's publicly visible
+    await request(app)
+      .put(`/api/krenova/${newId}/approve`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test");
+
+    const detail = await request(app).get(`/api/krenova/${newId}`);
+    expect(detail.status).toBe(200);
+    expect(detail.body.data.abstrak).toBe("Test abstrak dengan lampiran");
+    expect(Array.isArray(detail.body.data.fotoProduk)).toBe(true);
+    expect(detail.body.data.fotoProduk.length).toBe(2);
   });
 });

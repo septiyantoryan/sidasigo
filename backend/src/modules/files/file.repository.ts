@@ -22,6 +22,13 @@ export async function isFileAccessibleBy(userId: string, filename: string): Prom
   });
   if (krenova) return true;
 
+  // Check KrenovaAttachment table.
+  const krenovaAtt = await prisma.krenovaAttachment.findFirst({
+    where: { krenova: { userId }, path: filename },
+    select: { id: true },
+  });
+  if (krenovaAtt) return true;
+
   const indikator = await prisma.indikatorInovasiDaerah.findFirst({
     where: {
       inovasiDaerah: { userId },
@@ -49,5 +56,15 @@ export async function isFileAccessibleBy(userId: string, filename: string): Prom
     },
     select: { id: true },
   });
-  return Boolean(indikator);
+  if (indikator) return true;
+
+  // Also check the IndikatorAttachment table (multi-file uploads).
+  const attachment = await prisma.indikatorAttachment.findFirst({
+    where: {
+      inovasiDaerah: { userId },
+      path: filename,
+    },
+    select: { id: true },
+  });
+  return Boolean(attachment);
 }

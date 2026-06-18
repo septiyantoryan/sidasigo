@@ -91,9 +91,9 @@ export function InovasiDaerahDetailContent({
   const showActions = variant === "dashboard";
   const isOwner = Boolean(user?.role === "OPD" && data && data.userId === user.id);
   const isAdmin = user?.role === "Admin";
-  const canEdit = showActions && isOwner && data?.status === "Pending";
-  const canDelete = showActions && ((isOwner && data?.status === "Pending") || isAdmin);
-  const canManageIndikator = showActions && isOwner;
+  const canEdit = showActions && ((isOwner && data?.status !== "Disetujui") || isAdmin);
+  const canDelete = showActions && ((isOwner && data?.status !== "Disetujui") || isAdmin);
+  const canManageIndikator = showActions && (isOwner || isAdmin);
   const isDashboard = variant !== "public";
   const shellClass = isDashboard ? "" : "min-h-screen bg-background text-foreground";
   const innerClass = isDashboard
@@ -193,7 +193,10 @@ export function InovasiDaerahDetailContent({
 
                   <TabsContent value="indikator">
                     <CardContent>
-                      <IndikatorViewer indikator={data.indikator} />
+                      <IndikatorViewer
+                        indikator={data.indikator}
+                        attachments={(data as never as { attachments?: { field: string; path: string }[] }).attachments}
+                      />
                     </CardContent>
                   </TabsContent>
                 </Card>

@@ -12,7 +12,7 @@ import { useForm, type Resolver } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { KrenovaDataFields } from "@/components/krenova/KrenovaDataFields";
-import { FileUploadField } from "@/components/shared/FileUploadField";
+import { MultiFileUploader } from "@/components/shared/MultiFileUploader";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useCreateKrenova } from "@/hooks/use-krenova";
@@ -48,12 +48,14 @@ const krenovaStep1Schema = krenovaBaseSchema
 type DocKey =
   | "dokumenProposal"
   | "lampiranOriginalitas"
-  | "lampiranIdentitas";
+  | "lampiranIdentitas"
+  | "fotoProduk";
 
 const KRENOVA_DOCS: Array<{ key: DocKey; label: string }> = [
   { key: "dokumenProposal", label: "Dokumen Proposal" },
   { key: "lampiranOriginalitas", label: "Lampiran Originalitas" },
   { key: "lampiranIdentitas", label: "Lampiran Identitas" },
+  { key: "fotoProduk", label: "Foto Produk" },
 ];
 
 const STEPS = [
@@ -127,6 +129,17 @@ function ReviewField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ReviewNarrative({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="space-y-1.5">
+      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
 export function CreateKrenovaPage() {
   const navigate = useNavigate();
   const createMutation = useCreateKrenova();
@@ -136,6 +149,8 @@ export function CreateKrenovaPage() {
   const [docValues, setDocValues] = useState<Record<string, string>>({});
   const [docPreviews, setDocPreviews] = useState<Record<string, string>>({});
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [newAttachments, setNewAttachments] = useState<{ field: string; path: string }[]>([]);
+  const [fotoFiles, setFotoFiles] = useState<{ path: string; name: string; previewUrl?: string }[]>([]);
 
   const form = useForm<KrenovaCreateInput>({
     resolver: zodResolver(
@@ -161,8 +176,8 @@ export function CreateKrenovaPage() {
     };
   }, []);
 
-  const allDocsFilled = KRENOVA_DOCS.every((d) => Boolean(docValues[d.key]));
   const filledDocs = KRENOVA_DOCS.filter((d) => Boolean(docValues[d.key])).length;
+  const filledTotal = filledDocs + fotoFiles.length;
 
   async function handleUpload(key: DocKey, file: File) {
     setUploadingKey(key);
@@ -174,6 +189,10 @@ export function CreateKrenovaPage() {
         if (prev[key]) URL.revokeObjectURL(prev[key]);
         return { ...prev, [key]: objectUrl };
       });
+      if (key === "fotoProduk") {
+        setNewAttachments((prev) => [...prev, { field: "fotoProduk", path }]);
+        setFotoFiles((prev) => [...prev, { path, name: file.name, previewUrl: objectUrl }]);
+      }
       toast.success("Berkas terunggah");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengunggah berkas");
@@ -189,19 +208,16 @@ export function CreateKrenovaPage() {
       setStep(1);
       return;
     }
-    if (!allDocsFilled) {
-      toast.error("Semua dokumen wajib dilengkapi");
-      setStep(2);
-      return;
-    }
 
     try {
+      const attachments = newAttachments.length > 0 ? newAttachments : undefined;
       const created = await createMutation.mutateAsync({
         ...dataValues,
-        dokumenProposal: docValues.dokumenProposal,
-        lampiranOriginalitas: docValues.lampiranOriginalitas,
-        lampiranIdentitas: docValues.lampiranIdentitas,
-      });
+        dokumenProposal: docValues.dokumenProposal ?? "",
+        lampiranOriginalitas: docValues.lampiranOriginalitas ?? "",
+        lampiranIdentitas: docValues.lampiranIdentitas ?? "",
+        attachments,
+      } as never);
       toast.success("Krenova berhasil dikirim, menunggu verifikasi admin.");
       navigate(`/dashboard/krenova/${created.id}`);
     } catch (err) {
@@ -265,28 +281,35 @@ export function CreateKrenovaPage() {
         <div className="space-y-6">
           <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium">Kelengkapan dokumen</p>
+              <p className="text-sm font-medium">Dokumen dan Foto</p>
               <span className="text-sm text-muted-foreground">
-                {filledDocs}/{KRENOVA_DOCS.length} terunggah
+                {filledTotal} terunggah
               </span>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Seluruh dokumen wajib dilengkapi sebelum lanjut ke ringkasan.
-            </p>
           </div>
 
           <section className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-6">
             {KRENOVA_DOCS.map((doc) => {
               const value = docValues[doc.key] ?? "";
+              const isFoto = doc.key === "fotoProduk";
+              const files = isFoto
+                ? fotoFiles
+                : value
+                  ? [{ path: value, name: value.split(/[\\/]/).pop() ?? value, previewUrl: docPreviews[doc.key] }]
+                  : [];
               return (
-                <FileUploadField
+                <MultiFileUploader
                   key={doc.key}
                   label={doc.label}
-                  value={value || undefined}
-                  accept="application/pdf,image/png,image/jpeg,image/webp"
-                  disabled={uploadingKey === doc.key}
-                  href={docPreviews[doc.key]}
-                  onChange={(file) => handleUpload(doc.key, file)}
+                  files={files}
+                  disabled={uploadingKey !== null && uploadingKey !== doc.key}
+                  uploading={uploadingKey === doc.key}
+                  accept={
+                    isFoto
+                      ? "image/png,image/jpeg,image/webp"
+                      : "application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  }
+                  onChange={(fileList) => handleUpload(doc.key, fileList[0])}
                 />
               );
             })}
@@ -298,7 +321,7 @@ export function CreateKrenovaPage() {
             </Button>
             <Button
               onClick={() => setStep(3)}
-              disabled={!allDocsFilled || uploadingKey !== null}
+              disabled={uploadingKey !== null}
             >
               Lanjut ke Ringkasan <ArrowRight className="size-4" />
             </Button>
@@ -337,13 +360,18 @@ export function CreateKrenovaPage() {
               <ReviewField label="Alamat" value={dataValues.alamat} />
               <ReviewField label="Nomor HP" value={dataValues.nomorHp} />
             </dl>
+            <div className="mt-4 border-t border-border pt-4">
+              <ReviewNarrative title="Abstrak" value={dataValues.abstrak ?? ""} />
+            </div>
           </section>
 
           <section className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-6">
-            <h2 className="text-base font-semibold tracking-tight">Dokumen</h2>
+            <h2 className="text-base font-semibold tracking-tight">Dokumen &amp; Foto</h2>
             <ul className="grid gap-2 sm:grid-cols-2">
               {KRENOVA_DOCS.map((doc) => {
                 const value = docValues[doc.key] ?? "";
+                const isFoto = doc.key === "fotoProduk";
+                const fotoList = isFoto ? fotoFiles : [];
                 return (
                   <li
                     key={doc.key}
@@ -353,7 +381,21 @@ export function CreateKrenovaPage() {
                       <FileText className="size-4 shrink-0 text-primary" />
                       <span className="truncate text-sm">{doc.label}</span>
                     </span>
-                    {value ? (
+                    {isFoto && fotoList.length > 0 ? (
+                      <div className="flex gap-1">
+                        {fotoList.map((f, i) => (
+                          <a
+                            key={i}
+                            href={f.previewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            <ExternalLink className="size-3.5" /> Foto {i + 1}
+                          </a>
+                        ))}
+                      </div>
+                    ) : value ? (
                       <a
                         href={docPreviews[doc.key]}
                         target="_blank"

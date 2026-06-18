@@ -17,6 +17,7 @@ describe("delete rules integration", () => {
   let approvedInovasiId = "";
   let pendingKrenovaId = "";
   let approvedKrenovaId = "";
+  let rejectedInovasiId = "";
 
   const uploadRoot = path.join(process.cwd(), "uploads");
   let pendingProposalName = "";
@@ -132,11 +133,29 @@ describe("delete rules integration", () => {
       },
     });
     approvedKrenovaId = approvedKrenova.id;
+
+    const rejectedInovasi = await prisma.inovasiDaerah.create({
+      data: {
+        userId: opdId,
+        namaInovasi: "Rejected Inovasi Delete",
+        inisiator: "OPD",
+        jenisInovasi: JenisInovasi.Digital,
+        bentukInovasi: "App",
+        tglUjiCoba: new Date("2025-01-01"),
+        tglPenerapan: new Date("2025-02-01"),
+        rancangBangun: "x".repeat(320),
+        tujuan: "Tujuan",
+        manfaat: "Manfaat",
+        hasil: "Hasil",
+        status: Status.Ditolak,
+      },
+    });
+    rejectedInovasiId = rejectedInovasi.id;
   });
 
   afterAll(async () => {
     await prisma.inovasiDaerah.deleteMany({
-      where: { id: { in: [pendingInovasiId, approvedInovasiId] } },
+      where: { id: { in: [pendingInovasiId, approvedInovasiId, rejectedInovasiId] } },
     });
     await prisma.krenova.deleteMany({
       where: { id: { in: [pendingKrenovaId, approvedKrenovaId] } },
@@ -192,5 +211,27 @@ describe("delete rules integration", () => {
       .set("x-test-user-id", masyarakatId);
 
     expect(response.status).toBe(403);
+  });
+
+  it("owner can edit data on rejected inovasi", async () => {
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${rejectedInovasiId}`)
+      .set("x-test-role", "OPD")
+      .set("x-test-user-id", opdId)
+      .send({ tujuan: "Updated after rejection" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.tujuan).toBe("Updated after rejection");
+  });
+
+  it("admin can edit rejected inovasi", async () => {
+    const response = await request(app)
+      .put(`/api/inovasi-daerah/${rejectedInovasiId}`)
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test")
+      .send({ manfaat: "Edited by admin" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.manfaat).toBe("Edited by admin");
   });
 });

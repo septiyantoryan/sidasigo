@@ -119,6 +119,7 @@ model InovasiDaerah {
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   indikator     IndikatorInovasiDaerah?
+  attachments   IndikatorAttachment[]
 
   @@index([userId])
   @@index([status])
@@ -152,6 +153,18 @@ model IndikatorInovasiDaerah {
   updatedAt               DateTime      @updatedAt
 }
 
+model IndikatorAttachment {
+  id              String        @id @default(uuid())
+  inovasiDaerahId String
+  inovasiDaerah   InovasiDaerah @relation(fields: [inovasiDaerahId], references: [id], onDelete: Cascade)
+  field           String
+  path            String
+  createdAt       DateTime      @default(now())
+
+  @@index([inovasiDaerahId])
+  @@index([inovasiDaerahId, field])
+}
+
 model SystemSetting {
   id              String   @id @default("singleton")
   siteTitle       String   @default("SIDASI-GO")
@@ -165,6 +178,15 @@ model SystemSetting {
   mapsEmbedUrl    String?  @db.Text
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model HeroImage {
+  id        String   @id @default(uuid())
+  path      String
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sort])
 }
 
 model Krenova {
@@ -184,6 +206,7 @@ model Krenova {
   namaInovator5        String?
   alamat               String
   nomorHp              String
+  abstrak              String?      @db.Text
   dokumenProposal      String
   lampiranOriginalitas String
   lampiranIdentitas    String
@@ -191,10 +214,23 @@ model Krenova {
   alasanPenolakan      String?      @db.Text
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
+  attachments          KrenovaAttachment[]
 
   @@index([userId])
   @@index([status])
   @@index([statusPelaku])
+}
+
+model KrenovaAttachment {
+  id        String   @id @default(uuid())
+  krenovaId String
+  krenova   Krenova @relation(fields: [krenovaId], references: [id], onDelete: Cascade)
+  field     String
+  path      String
+  createdAt DateTime @default(now())
+
+  @@index([krenovaId])
+  @@index([krenovaId, field])
 }
 
 model Riset {

@@ -6,8 +6,8 @@
   "packageManager": "pnpm@10.24.0",
   "scripts": {
     "dev": "turbo dev --parallel",
-    "dev:client": "turbo dev --filter=sidasi-go-client",
-    "dev:server": "turbo dev --filter=sidasi-go-server",
+    "dev:frontend": "turbo dev --filter=sidasi-go-frontend",
+    "dev:backend": "turbo dev --filter=sidasi-go-backend",
     "build": "turbo build",
     "test": "turbo test --concurrency=1"
   },

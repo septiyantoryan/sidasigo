@@ -2,7 +2,6 @@ import { Download, FileText, Video } from "lucide-react";
 import type { Indikator } from "@/types";
 import { fileUrl } from "@/lib/api";
 import { docFields, docGroups as groups, TOTAL_INDIKATOR } from "@/lib/indikator-fields";
-import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
 
 function getValue(indikator: Indikator, key: keyof Indikator): string {
@@ -10,13 +9,21 @@ function getValue(indikator: Indikator, key: keyof Indikator): string {
   return typeof raw === "string" ? raw : "";
 }
 
-function DocItem({ label, value }: { label: string; value: string }) {
-  const filled = Boolean(value);
+function DocItem({
+  label,
+  value,
+  attPaths,
+}: {
+  label: string;
+  value: string;
+  attPaths?: string[];
+}) {
+  const hasFiles = (attPaths && attPaths.length > 0) || Boolean(value);
   return (
     <li
       className={cn(
         "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors",
-        filled
+        hasFiles
           ? "border-border bg-card"
           : "border-dashed border-border/70 bg-muted/30",
       )}
@@ -25,7 +32,7 @@ function DocItem({ label, value }: { label: string; value: string }) {
         <span
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-md",
-            filled
+            hasFiles
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground",
           )}
@@ -34,15 +41,31 @@ function DocItem({ label, value }: { label: string; value: string }) {
         </span>
         <span className="truncate text-sm font-medium">{label}</span>
       </div>
-      {filled ? (
-        <a
-          href={fileUrl(value)}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-        >
-          <Download className="size-3.5" /> Unduh
-        </a>
+      {hasFiles ? (
+        <div className="flex flex-col gap-1">
+          {attPaths && attPaths.length > 0 ? (
+            attPaths.map((p, i) => (
+              <a
+                key={i}
+                href={fileUrl(p)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <Download className="size-3.5" /> Unduh {attPaths.length > 1 ? i + 1 : ""}
+              </a>
+            ))
+          ) : value ? (
+            <a
+              href={fileUrl(value)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <Download className="size-3.5" /> Unduh
+            </a>
+          ) : null}
+        </div>
       ) : (
         <span className="shrink-0 text-xs text-muted-foreground">Belum ada</span>
       )}
@@ -50,7 +73,13 @@ function DocItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function IndikatorViewer({ indikator }: { indikator?: Indikator | null }) {
+export function IndikatorViewer({
+  indikator,
+  attachments,
+}: {
+  indikator?: Indikator | null;
+  attachments?: { field: string; path: string }[];
+}) {
   if (!indikator) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-10 text-center">
@@ -67,13 +96,25 @@ export function IndikatorViewer({ indikator }: { indikator?: Indikator | null })
     );
   }
 
+  // Build a map of field → attachment paths
+  const attMap = new Map<string, string[]>();
+  if (attachments) {
+    for (const att of attachments) {
+      const list = attMap.get(att.field) ?? [];
+      list.push(att.path);
+      attMap.set(att.field, list);
+    }
+  }
+
   const filledDocs = docFields.filter(
-    (field) => getValue(indikator, field.key) !== "",
+    (field) => {
+      const attPaths = attMap.get(field.key);
+      return (attPaths && attPaths.length > 0) || getValue(indikator, field.key) !== "";
+    },
   ).length;
   const videoUrl = getValue(indikator, "kualitasVideo");
   const filledTotal = filledDocs + (videoUrl ? 1 : 0);
   const percent = Math.round((filledTotal / TOTAL_INDIKATOR) * 100);
-  const embedUrl = videoUrl ? getYouTubeEmbedUrl(videoUrl) : null;
 
   return (
     <div className="space-y-6">
@@ -103,6 +144,7 @@ export function IndikatorViewer({ indikator }: { indikator?: Indikator | null })
                 key={field.key}
                 label={field.label}
                 value={getValue(indikator, field.key)}
+                attPaths={attMap.get(field.key)}
               />
             ))}
           </ul>
@@ -113,19 +155,7 @@ export function IndikatorViewer({ indikator }: { indikator?: Indikator | null })
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Video Inovasi
         </h3>
-        {embedUrl ? (
-          <div className="overflow-hidden rounded-xl border border-border">
-            <div className="aspect-video w-full">
-              <iframe
-                src={embedUrl}
-                title="Video inovasi daerah"
-                className="size-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        ) : videoUrl ? (
+        {videoUrl ? (
           <a
             href={videoUrl}
             target="_blank"
