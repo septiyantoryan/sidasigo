@@ -214,7 +214,7 @@ export function AdminUsersPage() {
                     <TableCell className="text-muted-foreground">
                       {(page - 1) * pageSize + index + 1}
                     </TableCell>
-                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-medium max-w-[12rem] truncate">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.username ?? "-"}</TableCell>
                     <TableCell>{user.role}</TableCell>
