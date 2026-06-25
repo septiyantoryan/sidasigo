@@ -30,7 +30,7 @@ describe("InovasiDaerahForm", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows validation error when rancangBangun has fewer than 300 chars", async () => {
+  it("shows validation error when rancangBangun has fewer than 300 words", async () => {
     const onSubmit = vi.fn();
 
     renderWithProviders(<InovasiDaerahForm onSubmit={onSubmit} />);
@@ -49,7 +49,7 @@ describe("InovasiDaerahForm", () => {
 
     await user.click(screen.getByRole("button", { name: /simpan/i }));
 
-    expect(await screen.findByText(/minimal 300 karakter/i)).toBeInTheDocument();
+    expect(await screen.findByText(/minimal 300 kata/i)).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -74,7 +74,7 @@ describe("InovasiDaerahForm", () => {
       target: { value: "2025-02-01" },
     });
     fireEvent.change(screen.getByLabelText(/rancang bangun/i), {
-      target: { value: "x".repeat(320) },
+      target: { value: Array.from({ length: 301 }, () => "kata").join(" ") },
     });
     fireEvent.change(screen.getByLabelText(/tujuan/i), {
       target: { value: "Tujuan" },
@@ -94,6 +94,6 @@ describe("InovasiDaerahForm", () => {
 
     const payload = onSubmit.mock.calls[0][0];
     expect(payload.namaInovasi).toBe("Inovasi A");
-    expect(payload.rancangBangun.length).toBeGreaterThanOrEqual(300);
+    expect(payload.rancangBangun.trim().split(/\s+/).filter(Boolean).length).toBeGreaterThanOrEqual(300);
   });
 });

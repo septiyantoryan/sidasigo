@@ -138,7 +138,7 @@ export function InovasiDaerahForm({
         <div className="flex items-center justify-between">
           <Label htmlFor="rancangBangun">Rancang Bangun</Label>
           <span className="text-xs text-muted-foreground">
-            {rancangBangun.length} karakter (target ≥ 300)
+            {rancangBangun.trim().split(/\s+/).filter(Boolean).length} kata (target ≥ 300)
           </span>
         </div>
         <Textarea

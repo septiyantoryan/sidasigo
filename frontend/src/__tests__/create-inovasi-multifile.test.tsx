@@ -41,7 +41,7 @@ async function goToStep2() {
   fireEvent.change(screen.getByLabelText(/bentuk inovasi/i), { target: { value: "Aplikasi" } });
   fireEvent.change(screen.getByLabelText(/tanggal uji coba/i), { target: { value: "2025-01-01" } });
   fireEvent.change(screen.getByLabelText(/tanggal penerapan/i), { target: { value: "2025-02-01" } });
-  fireEvent.change(screen.getByLabelText(/rancang bangun/i), { target: { value: "x".repeat(320) } });
+  fireEvent.change(screen.getByLabelText(/rancang bangun/i), { target: { value: Array.from({ length: 301 }, () => "kata").join(" ") } });
   fireEvent.change(screen.getByLabelText(/tujuan/i), { target: { value: "Tujuan" } });
   fireEvent.change(screen.getByLabelText(/manfaat/i), { target: { value: "Manfaat" } });
   fireEvent.change(screen.getByLabelText(/hasil/i), { target: { value: "Hasil" } });
