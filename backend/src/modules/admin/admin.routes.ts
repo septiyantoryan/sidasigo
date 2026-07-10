@@ -4,7 +4,7 @@ import { adminOnly } from "../../middleware/role";
 import { validate } from "../../middleware/validate";
 import { validateFileSignature } from "../../middleware/file-signature";
 import { updateSettingSchema } from "../settings/setting.schema";
-import { createOpdUserSchema, changePasswordAdminSchema, changeUsernameAdminSchema } from "../users/user.schema";
+import { createOpdUserSchema, changeEmailAdminSchema, changePasswordAdminSchema, changeUsernameAdminSchema } from "../users/user.schema";
 import {
   deleteAdminUser,
   getAdminDashboard,
@@ -21,6 +21,7 @@ import {
   putAdminSettings,
   putAdminUserPassword,
   putAdminUsername,
+  putAdminEmail,
   deleteHeroImageHandler,
   putHeroImageReorder,
   uploadPublicSingle,
@@ -47,6 +48,7 @@ router.post("/users", validate(createOpdUserSchema), postAdminUser);
 router.delete("/users/:id", deleteAdminUser);
 router.put("/users/:id/change-password", validate(changePasswordAdminSchema), putAdminUserPassword);
 router.put("/users/:id/change-username", validate(changeUsernameAdminSchema), putAdminUsername);
+router.put("/users/:id/change-email", validate(changeEmailAdminSchema), putAdminEmail);
 router.get("/inovasi-daerah", getAdminInovasiDaerah);
 router.get("/krenova", getAdminKrenova);
 router.get("/settings", getAdminSettings);

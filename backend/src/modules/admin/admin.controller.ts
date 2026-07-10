@@ -18,8 +18,8 @@ import {
   reorderHeroImages,
 } from "../settings/setting.repository";
 import { createOpdUser, deleteUser, listGoogleUsers, listUsers } from "../users/user.service";
-import { changePasswordAdminSchema, changeUsernameAdminSchema } from "../users/user.schema";
-import { adminChangePassword, adminChangeUsername } from "../users/user.service";
+import { changeEmailAdminSchema, changePasswordAdminSchema, changeUsernameAdminSchema } from "../users/user.schema";
+import { adminChangeEmail, adminChangePassword, adminChangeUsername } from "../users/user.service";
 import { getDashboardStats, getPendingSubmissionsPaginated } from "./dashboard.service";
 
 export { uploadPublicSingle };
@@ -165,6 +165,29 @@ export const putAdminUsername: RequestHandler = async (request, response) => {
   } catch (err) {
     if (err instanceof Error && err.message === "Username sudah dipakai") {
       error(response, "CONFLICT", err.message, 409);
+      return;
+    }
+    throw err;
+  }
+};
+
+export const putAdminEmail: RequestHandler = async (request, response) => {
+  const parsed = changeEmailAdminSchema.safeParse(request.body);
+  if (!parsed.success) {
+    error(response, "VALIDATION_ERROR", "Input tidak valid", 400, parsed.error.issues);
+    return;
+  }
+
+  try {
+    await adminChangeEmail(String(request.params.id), parsed.data);
+    success(response, { message: "Email berhasil diubah" });
+  } catch (err) {
+    if (err instanceof Error && err.message === "Email sudah dipakai") {
+      error(response, "CONFLICT", err.message, 409);
+      return;
+    }
+    if (err instanceof Error && err.message === "Hanya Admin atau OPD yang dapat mengubah email") {
+      error(response, "FORBIDDEN", err.message, 403);
       return;
     }
     throw err;

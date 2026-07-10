@@ -102,6 +102,39 @@ describe("download integration", () => {
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
   });
 
+  it("accepts admin DOCX upload", async () => {
+    const docx = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00]);
+
+    const response = await request(app)
+      .post("/api/admin/download/upload")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId)
+      .attach("file", docx, {
+        filename: "dokumen.docx",
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.path).toMatch(/\.docx$/);
+  });
+
+  it("accepts admin document upload larger than 10MB and up to 25MB", async () => {
+    const pdf = Buffer.alloc(11 * 1024 * 1024, 0);
+    pdf.write("%PDF", 0, "ascii");
+
+    const response = await request(app)
+      .post("/api/admin/download/upload")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId)
+      .attach("file", pdf, {
+        filename: "dokumen-besar.pdf",
+        contentType: "application/pdf",
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.path).toMatch(/\.pdf$/);
+  });
+
   it("admin can create, update, and delete download", async () => {
     const create = await request(app)
       .post("/api/admin/download")

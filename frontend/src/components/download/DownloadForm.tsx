@@ -54,11 +54,11 @@ export function DownloadForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Dokumen (PDF)</Label>
+        <Label>Dokumen (PDF/DOCX)</Label>
         <Dropzone
-          label="Unggah dokumen PDF (maks 10MB)"
-          accept="application/pdf"
-          maxSize={10 * 1024 * 1024}
+          label="Unggah dokumen PDF/DOCX (maks 25MB)"
+          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          maxSize={25 * 1024 * 1024}
           value={filePath || undefined}
           onUploadingChange={setIsUploading}
           onChange={async (file) => {

@@ -287,10 +287,14 @@ export default function App() {
               path="/inovasi-daerah/:id/edit"
               element={<EditInovasiDaerahPage />}
             />
-            <Route
-              path="/inovasi-daerah/:id/indikator"
-              element={<IndikatorPage />}
-            />
+<Route
+            path="/inovasi-daerah/:id/indikator"
+            element={<IndikatorPage />}
+          />
+          <Route
+            path="/dashboard/pengaturan-akun"
+            element={<ChangePasswordPage />}
+          />
           </Route>
         </Route>
 

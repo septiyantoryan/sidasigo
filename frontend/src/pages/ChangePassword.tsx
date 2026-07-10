@@ -1,16 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, ShieldCheck, UserCog } from "lucide-react";
+import { KeyRound, Mail, ShieldCheck, UserCog } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AnimatedSection } from "@/components/public/AnimatedSection";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/shared/PasswordInput";
-import { Separator } from "@/components/ui/separator";
-import { useChangeOwnPassword, useChangeOwnUsername } from "@/hooks/use-change-password";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useChangeOwnEmail,
+  useChangeOwnPassword,
+  useChangeOwnUsername,
+} from "@/hooks/use-change-password";
+import { useAuthStore } from "@/stores/auth";
 
 const passwordRule = z
   .string()
@@ -41,13 +46,22 @@ const usernameSchema = z.object({
   username: usernameRule,
 });
 
+const emailSchema = z.object({
+  email: z.string().email("Format email tidak valid"),
+  password: z.string().min(1, "Password wajib diisi"),
+});
+
 type PwForm = z.infer<typeof pwSchema>;
 type UsernameForm = z.infer<typeof usernameSchema>;
+type EmailForm = z.infer<typeof emailSchema>;
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const canManageAccount = user?.role === "Admin" || user?.role === "OPD";
   const pwMutation = useChangeOwnPassword();
   const usernameMutation = useChangeOwnUsername();
+  const emailMutation = useChangeOwnEmail();
 
   const pwForm = useForm<PwForm>({
     resolver: zodResolver(pwSchema),
@@ -59,78 +73,238 @@ export function ChangePasswordPage() {
     defaultValues: { password: "", username: "" },
   });
 
+  const emailForm = useForm<EmailForm>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
   return (
-    <div className="flex min-h-[60vh] flex-col items-center gap-6 pt-16">
-      <AnimatedSection direction="up" className="w-full max-w-sm">
-        <Card className="rounded-[1.75rem]">
-          <CardHeader className="flex flex-col items-center gap-3 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl border border-border bg-background">
-              <KeyRound className="size-6 text-primary" aria-hidden />
+    <div className="space-y-6">
+      <PageHeader
+        title="Pengaturan Akun"
+        description="Kelola kata sandi, email, dan username akun Anda."
+      />
+
+      <Tabs defaultValue="password" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
+          <TabsTrigger value="password">
+            <KeyRound className="size-4" />
+            Kata Sandi
+          </TabsTrigger>
+          {canManageAccount && (
+            <TabsTrigger value="email">
+              <Mail className="size-4" />
+              Email
+            </TabsTrigger>
+          )}
+          {canManageAccount && (
+            <TabsTrigger value="username">
+              <UserCog className="size-4" />
+              Username
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="password" className="mt-6">
+          <form
+            noValidate
+            onSubmit={pwForm.handleSubmit(async (values) => {
+              try {
+                await pwMutation.mutateAsync({
+                  oldPassword: values.oldPassword,
+                  newPassword: values.newPassword,
+                });
+                toast.success("Password berhasil diubah");
+                pwForm.reset();
+              } catch (err) {
+                toast.error(
+                  err instanceof Error ? err.message : "Gagal mengubah password",
+                );
+              }
+            })}
+            className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-6"
+          >
+            <h2 className="text-lg font-semibold tracking-tight">Ganti Kata Sandi</h2>
+
+            <div className="space-y-2">
+              <Label htmlFor="oldPassword">Password Lama</Label>
+              <PasswordInput
+                id="oldPassword"
+                placeholder="Masukkan password lama"
+                autoComplete="current-password"
+                {...pwForm.register("oldPassword")}
+              />
+              {pwForm.formState.errors.oldPassword && (
+                <p role="alert" className="text-xs text-destructive">
+                  {pwForm.formState.errors.oldPassword.message}
+                </p>
+              )}
             </div>
-            <CardTitle className="text-lg font-black">Ganti Kata Sandi</CardTitle>
-          </CardHeader>
-          <CardContent>
+
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Password Baru</Label>
+              <PasswordInput
+                id="newPassword"
+                placeholder="Masukkan password baru"
+                autoComplete="new-password"
+                {...pwForm.register("newPassword")}
+              />
+              {pwForm.formState.errors.newPassword && (
+                <p role="alert" className="text-xs text-destructive">
+                  {pwForm.formState.errors.newPassword.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
+              <PasswordInput
+                id="confirmPassword"
+                placeholder="Konfirmasi password baru"
+                autoComplete="new-password"
+                {...pwForm.register("confirmPassword")}
+              />
+              {pwForm.formState.errors.confirmPassword && (
+                <p role="alert" className="text-xs text-destructive">
+                  {pwForm.formState.errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-border bg-muted p-3 text-xs leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mb-1 size-4 text-primary" aria-hidden />
+              Password harus mengandung huruf besar, huruf kecil, angka, dan simbol. Minimal 6 karakter.
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit" disabled={pwMutation.isPending}>
+                Simpan Password Baru
+              </Button>
+            </div>
+          </form>
+        </TabsContent>
+
+        {canManageAccount && (
+          <TabsContent value="email" className="mt-6">
             <form
               noValidate
-              onSubmit={pwForm.handleSubmit(async (values) => {
+              onSubmit={emailForm.handleSubmit(async (values) => {
                 try {
-                  await pwMutation.mutateAsync({ oldPassword: values.oldPassword, newPassword: values.newPassword });
-                  toast.success("Password berhasil diubah");
-                  pwForm.reset();
+                  await emailMutation.mutateAsync(values);
+                  toast.success("Email berhasil diubah");
+                  emailForm.reset();
                 } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Gagal mengubah password");
+                  toast.error(
+                    err instanceof Error ? err.message : "Gagal mengubah email",
+                  );
                 }
               })}
-              className="flex flex-col gap-4"
+              className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-6"
             >
-              <PasswordInput placeholder="Masukkan Password Lama" autoComplete="current-password" className="rounded-full" {...pwForm.register("oldPassword")} />
-              {pwForm.formState.errors.oldPassword && <p role="alert" className="text-xs text-destructive">{pwForm.formState.errors.oldPassword.message}</p>}
-              <PasswordInput placeholder="Masukkan Password Baru" autoComplete="new-password" className="rounded-full" {...pwForm.register("newPassword")} />
-              {pwForm.formState.errors.newPassword && <p role="alert" className="text-xs text-destructive">{pwForm.formState.errors.newPassword.message}</p>}
-              <PasswordInput placeholder="Konfirmasi password baru" autoComplete="new-password" className="rounded-full" {...pwForm.register("confirmPassword")} />
-              {pwForm.formState.errors.confirmPassword && <p role="alert" className="text-xs text-destructive">{pwForm.formState.errors.confirmPassword.message}</p>}
-              <div className="rounded-xl border border-border bg-muted p-3 text-xs leading-relaxed text-muted-foreground">
-                <ShieldCheck className="mb-1 size-4 text-primary" aria-hidden />
-                Password harus mengandung huruf besar, huruf kecil, angka, dan simbol. Minimal 6 karakter.
-              </div>
-              <Button type="submit" className="w-full rounded-full" disabled={pwMutation.isPending}>Simpan Password Baru</Button>
-            </form>
-          </CardContent>
-        </Card>
-      </AnimatedSection>
+              <h2 className="text-lg font-semibold tracking-tight">Ganti Email</h2>
 
-      <AnimatedSection direction="up" delay={0.1} className="w-full max-w-sm">
-        <Card className="rounded-[1.75rem]">
-          <CardHeader className="flex flex-col items-center gap-3 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl border border-border bg-background">
-              <UserCog className="size-6 text-primary" aria-hidden />
-            </div>
-            <CardTitle className="text-lg font-black">Ganti Username</CardTitle>
-          </CardHeader>
-          <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Baru</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Masukkan email baru"
+                  autoComplete="email"
+                  {...emailForm.register("email")}
+                />
+                {emailForm.formState.errors.email && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {emailForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="emailPassword">Password Konfirmasi</Label>
+                <PasswordInput
+                  id="emailPassword"
+                  placeholder="Masukkan password untuk konfirmasi"
+                  autoComplete="current-password"
+                  {...emailForm.register("password")}
+                />
+                {emailForm.formState.errors.password && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {emailForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={emailMutation.isPending}>
+                  Simpan Email Baru
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+        )}
+
+        {canManageAccount && (
+          <TabsContent value="username" className="mt-6">
             <form
               noValidate
               onSubmit={userForm.handleSubmit(async (values) => {
                 try {
-                  await usernameMutation.mutateAsync({ password: values.password, username: values.username });
+                  await usernameMutation.mutateAsync({
+                    password: values.password,
+                    username: values.username,
+                  });
                   toast.success("Username berhasil diubah");
                   userForm.reset();
                   navigate("/dashboard");
                 } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Gagal mengubah username");
+                  toast.error(
+                    err instanceof Error ? err.message : "Gagal mengubah username",
+                  );
                 }
               })}
-              className="flex flex-col gap-4"
+              className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-6"
             >
-              <Input placeholder="Masukkan Username Baru" autoComplete="username" className="rounded-full" {...userForm.register("username")} />
-              {userForm.formState.errors.username && <p role="alert" className="text-xs text-destructive">{userForm.formState.errors.username.message}</p>}
-              <PasswordInput placeholder="Password konfirmasi" autoComplete="current-password" className="rounded-full" {...userForm.register("password")} />
-              {userForm.formState.errors.password && <p role="alert" className="text-xs text-destructive">{userForm.formState.errors.password.message}</p>}
-              <Button type="submit" className="w-full rounded-full" disabled={usernameMutation.isPending}>Simpan Username Baru</Button>
+              <h2 className="text-lg font-semibold tracking-tight">Ganti Username</h2>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username Baru</Label>
+                <Input
+                  id="username"
+                  placeholder="Masukkan username baru"
+                  autoComplete="username"
+                  {...userForm.register("username")}
+                />
+                {userForm.formState.errors.username && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {userForm.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="usernamePassword">Password Konfirmasi</Label>
+                <PasswordInput
+                  id="usernamePassword"
+                  placeholder="Masukkan password untuk konfirmasi"
+                  autoComplete="current-password"
+                  {...userForm.register("password")}
+                />
+                {userForm.formState.errors.password && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {userForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={usernameMutation.isPending}>
+                  Simpan Username Baru
+                </Button>
+              </div>
             </form>
-          </CardContent>
-        </Card>
-      </AnimatedSection>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

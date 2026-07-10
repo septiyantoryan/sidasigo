@@ -1,3 +1,4 @@
+import { Status } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 
 /**
@@ -67,4 +68,19 @@ export async function isFileAccessibleBy(userId: string, filename: string): Prom
     select: { id: true },
   });
   return Boolean(attachment);
+}
+
+export async function isPublicKrenovaPhoto(filename: string): Promise<boolean> {
+  if (!filename) return false;
+
+  const photo = await prisma.krenovaAttachment.findFirst({
+    where: {
+      field: "fotoProduk",
+      path: filename,
+      krenova: { status: Status.Disetujui },
+    },
+    select: { id: true },
+  });
+
+  return Boolean(photo);
 }

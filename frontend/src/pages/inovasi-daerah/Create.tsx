@@ -305,7 +305,7 @@ export function CreateInovasiDaerahPage() {
               />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Dokumen tidak harus lengkap untuk menyimpan. Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 10 MB per file.
+              Dokumen tidak harus lengkap untuk menyimpan. Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 25 MB per file.
             </p>
           </div>
 

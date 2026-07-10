@@ -166,7 +166,7 @@ export function IndikatorPage() {
           />
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 10 MB per file.
+          Format didukung: PDF, JPG, PNG, WEBP, DOC, DOCX. Maks 25 MB per file.
         </p>
       </div>
 

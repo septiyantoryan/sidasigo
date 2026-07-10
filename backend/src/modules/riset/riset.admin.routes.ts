@@ -21,7 +21,7 @@ router.delete("/:id", deleteRisetHandler);
 router.post(
   "/upload",
   uploadPublicDocSingle,
-  validateFileSignature(["application/pdf"]),
+  validateFileSignature(["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]),
   postRisetUpload,
 );
 

@@ -62,6 +62,12 @@ function buildCrumbs(pathname: string, params: Record<string, string | undefined
         { label: "Daftar Krenova" },
       ];
     }
+    if (segments[1] === "pengaturan-akun") {
+      return [
+        { label: "Dashboard", to: "/dashboard" },
+        { label: "Pengaturan Akun" },
+      ];
+    }
   }
 
   if (segments[0] === "admin") {

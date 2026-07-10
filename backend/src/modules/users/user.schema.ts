@@ -47,8 +47,19 @@ export const changeUsernameAdminSchema = z.object({
   username: usernameRule,
 });
 
+export const changeEmailSelfSchema = z.object({
+  password: z.string().min(1, "Password wajib diisi"),
+  email: z.string().email("Format email tidak valid"),
+});
+
+export const changeEmailAdminSchema = z.object({
+  email: z.string().email("Format email tidak valid"),
+});
+
 export type CreateOpdUserInput = z.infer<typeof createOpdUserSchema>;
 export type ChangePasswordSelfInput = z.infer<typeof changePasswordSelfSchema>;
 export type ChangePasswordAdminInput = z.infer<typeof changePasswordAdminSchema>;
 export type ChangeUsernameSelfInput = z.infer<typeof changeUsernameSelfSchema>;
 export type ChangeUsernameAdminInput = z.infer<typeof changeUsernameAdminSchema>;
+export type ChangeEmailSelfInput = z.infer<typeof changeEmailSelfSchema>;
+export type ChangeEmailAdminInput = z.infer<typeof changeEmailAdminSchema>;

@@ -129,10 +129,10 @@ export function RisetForm({
         </div>
 
         <div className="space-y-2 sm:col-span-2">
-          <Label>Dokumen (PDF)</Label>
+          <Label>Dokumen (PDF/DOCX)</Label>
           <Dropzone
-            label="Unggah dokumen PDF"
-            accept="application/pdf"
+            label="Unggah dokumen PDF/DOCX (maks 25MB)"
+            accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             value={filePath || undefined}
             onUploadingChange={setIsUploading}
             onChange={async (file) => {

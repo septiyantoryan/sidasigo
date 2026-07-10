@@ -33,10 +33,11 @@ describe("RisetCard", () => {
     expect(screen.getByText("Riset/Kajian")).toBeInTheDocument();
   });
 
-  it("renders a download button linking to the file", () => {
+  it("links the card to the public detail page", () => {
     renderCard(item);
-    const link = screen.getByRole("link", { name: /unduh dokumen/i });
-    expect(link.getAttribute("href")).toContain("/api/public-files/riset.pdf");
+    const link = screen.getByRole("link", { name: /riset pertanian presisi/i });
+    expect(link.getAttribute("href")).toBe("/riset/r1");
+    expect(screen.queryByRole("link", { name: /unduh dokumen/i })).not.toBeInTheDocument();
   });
 
   it("renders Penelitian badge for penelitian items", () => {

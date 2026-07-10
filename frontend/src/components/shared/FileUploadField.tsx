@@ -18,7 +18,7 @@ type FileUploadFieldProps = {
   className?: string;
 };
 
-const DEFAULT_MAX_SIZE = 10 * 1024 * 1024;
+const DEFAULT_MAX_SIZE = 25 * 1024 * 1024;
 const DEFAULT_ACCEPT = "application/pdf,image/png,image/jpeg,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 function formatSize(bytes: number): string {

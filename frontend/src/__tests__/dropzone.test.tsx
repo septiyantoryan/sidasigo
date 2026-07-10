@@ -34,6 +34,23 @@ describe("Dropzone", () => {
     });
   });
 
+  it("accepts files larger than 10MB when using the default 25MB limit", async () => {
+    const onChange = vi.fn();
+    render(<Dropzone onChange={onChange} />);
+
+    const input = screen.getByTestId("file-uploader-input") as HTMLInputElement;
+    const file = new File(["x"], "large.pdf", {
+      type: "application/pdf",
+    });
+    Object.defineProperty(file, "size", { value: 11 * 1024 * 1024 });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(file);
+    });
+  });
+
   it("accepts a valid file via drop", async () => {
     const onChange = vi.fn();
     render(<Dropzone onChange={onChange} maxSize={2048} label="Area unggah" />);

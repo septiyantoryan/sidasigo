@@ -44,3 +44,27 @@ export function useAdminChangeUsername(userId: string) {
     },
   });
 }
+
+export function useChangeOwnEmail() {
+  return useMutation({
+    mutationFn: (input: { password: string; email: string }) =>
+      api.put<{ message: string }>("/api/auth/user/change-email", input),
+    onSuccess: () => {
+      // Email affects the authenticated identity shown in the UI; refresh
+      // the auth store (state lives in Zustand, not React Query).
+      void useAuthStore.getState().refresh({ silent: true });
+    },
+  });
+}
+
+export function useAdminChangeEmail(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { email: string }) =>
+      api.put<{ message: string }>(`/api/admin/users/${userId}/change-email`, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}

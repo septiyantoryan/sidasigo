@@ -5,6 +5,12 @@ import { toast } from "sonner";
 import { AnimatedSection } from "@/components/public/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { JenisBadge } from "@/components/shared/JenisBadge";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
@@ -37,6 +43,7 @@ export function KrenovaDetailContent({
   const deleteMutation = useDeleteKrenova();
   const user = useAuthStore((state) => state.user);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<{ path: string; index: number } | null>(null);
 
   const data = detail.data;
   const showActions = variant === "dashboard";
@@ -164,13 +171,19 @@ export function KrenovaDetailContent({
                       </h2>
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         {fotoProduk.map((path, i) => (
-                          <div key={i} className="overflow-hidden rounded-lg border border-border">
+                          <button
+                            key={i}
+                            type="button"
+                            aria-label={`Lihat foto produk ${i + 1}`}
+                            onClick={() => setSelectedPhoto({ path, index: i })}
+                            className="group overflow-hidden rounded-lg border border-border text-left outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          >
                             <img
                               src={fileUrl(path)}
                               alt={`Foto produk ${i + 1}`}
-                              className="h-48 w-full object-cover"
+                              className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
                             />
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </CardContent>
@@ -229,6 +242,21 @@ export function KrenovaDetailContent({
         ) : (
           <p className="text-sm text-muted-foreground">Data tidak ditemukan.</p>
         )}
+
+        <Dialog open={selectedPhoto !== null} onOpenChange={(open) => !open && setSelectedPhoto(null)}>
+          <DialogContent className="max-w-4xl p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>Foto Produk</DialogTitle>
+            </DialogHeader>
+            {selectedPhoto && (
+              <img
+                src={fileUrl(selectedPhoto.path)}
+                alt={`Pratinjau foto produk ${selectedPhoto.index + 1}`}
+                className="max-h-[75vh] w-full rounded-lg object-contain"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         <ConfirmDialog
           open={confirmOpen}

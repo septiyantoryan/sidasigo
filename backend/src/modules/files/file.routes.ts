@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth";
+import { optionalAuth } from "../../middleware/auth";
 import { getFile } from "./file.controller";
 
 const router = Router();
 
-router.get("/:filename", requireAuth, getFile);
+router.get("/:filename", optionalAuth, getFile);
 
 export default router;

@@ -85,6 +85,11 @@ export function getNavData(role: Role | undefined): NavItem[] {
         url: "/admin/settings",
         icon: Settings,
       },
+      {
+        title: "Pengaturan Akun",
+        url: "/dashboard/pengaturan-akun",
+        icon: Settings,
+      },
     ];
   }
 
@@ -100,6 +105,11 @@ export function getNavData(role: Role | undefined): NavItem[] {
         url: "/dashboard/inovasi-daerah",
         icon: Lightbulb,
         activePatterns: ["/inovasi-daerah"],
+      },
+      {
+        title: "Pengaturan Akun",
+        url: "/dashboard/pengaturan-akun",
+        icon: Settings,
       },
     ];
   }

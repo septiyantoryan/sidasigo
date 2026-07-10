@@ -4,7 +4,7 @@ import { auth } from "../../lib/auth";
 import { AppError } from "../../utils/app-error";
 import { buildPaginated } from "../../utils/pagination";
 import type { AdminGoogleUsersQuery, AdminUsersQuery } from "../shared/pagination.schema";
-import type { ChangePasswordAdminInput, ChangePasswordSelfInput, ChangeUsernameAdminInput, ChangeUsernameSelfInput, CreateOpdUserInput } from "./user.schema";
+import type { ChangePasswordAdminInput, ChangePasswordSelfInput, ChangeUsernameAdminInput, ChangeUsernameSelfInput, CreateOpdUserInput, ChangeEmailSelfInput, ChangeEmailAdminInput } from "./user.schema";
 import {
   deleteUserById,
   findCredentialAccountByUserId,
@@ -15,6 +15,7 @@ import {
   findUsersRows,
   setUserAsOpd,
   updateAccountPassword,
+  updateUserEmail,
   updateUserUsername,
 } from "./user.repository";
 
@@ -124,4 +125,47 @@ export async function adminChangePassword(userId: string, input: ChangePasswordA
 
   const hashed = bcrypt.hashSync(input.newPassword, 10);
   await updateAccountPassword(account.id, hashed);
+}
+
+export async function changeOwnEmail(userId: string, input: ChangeEmailSelfInput) {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new AppError("NOT_FOUND", "User tidak ditemukan", 404);
+  }
+  if (user.role !== "Admin" && user.role !== "OPD") {
+    throw new AppError("FORBIDDEN", "Hanya Admin atau OPD yang dapat mengubah email", 403);
+  }
+
+  const account = await findCredentialAccountByUserId(userId);
+  if (!account) {
+    throw new AppError("NOT_FOUND", "Akun kredensial tidak ditemukan", 404);
+  }
+
+  if (!account.password || !bcrypt.compareSync(input.password, account.password)) {
+    throw new AppError("UNAUTHORIZED", "Password tidak sesuai", 401);
+  }
+
+  const existing = await findUserByEmail(input.email);
+  if (existing && existing.id !== userId) {
+    throw new AppError("CONFLICT", "Email sudah dipakai", 409);
+  }
+
+  await updateUserEmail(userId, input.email);
+}
+
+export async function adminChangeEmail(userId: string, input: ChangeEmailAdminInput) {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new AppError("NOT_FOUND", "User tidak ditemukan", 404);
+  }
+  if (user.role !== "Admin" && user.role !== "OPD") {
+    throw new AppError("FORBIDDEN", "Hanya Admin atau OPD yang dapat mengubah email", 403);
+  }
+
+  const existing = await findUserByEmail(input.email);
+  if (existing && existing.id !== userId) {
+    throw new AppError("CONFLICT", "Email sudah dipakai", 409);
+  }
+
+  await updateUserEmail(userId, input.email);
 }

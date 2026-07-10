@@ -8,6 +8,7 @@ import {
   Settings2,
   Trash2,
   User,
+  Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
@@ -169,44 +170,83 @@ export function InovasiDaerahDetailContent({
               </div>
             )}
 
-            <Tabs defaultValue="profil" className="w-full">
+            {variant === "public" ? (
               <Card className="rounded-[1.75rem]">
-                <CardHeader>
-                  <TabsList className="gap-2 rounded-full w-fit">
-                    <TabsTrigger value="profil" className="rounded-full">Profil Inovasi</TabsTrigger>
-                    <TabsTrigger value="indikator" className="rounded-full">Indikator</TabsTrigger>
-                  </TabsList>
-                </CardHeader>
-
-                <TabsContent value="profil">
-                  <CardContent className="flex flex-col gap-6">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <MetaRow icon={User} label="Inisiator" value={data.inisiator} />
-                      <MetaRow icon={CalendarClock} label="Uji Coba" value={formatTanggal(data.tglUjiCoba)} />
-                      <MetaRow icon={CalendarCheck} label="Penerapan" value={formatTanggal(data.tglPenerapan)} />
-                      <MetaRow icon={RefreshCw} label="Diperbarui" value={formatTanggal(data.updatedAt)} />
-                    </div>
-                    <Separator />
-                    <NarrativeBlock title="Rancang Bangun" value={data.rancangBangun} />
-                    <Separator />
-                    <NarrativeBlock title="Tujuan" value={data.tujuan} />
-                    <Separator />
-                    <NarrativeBlock title="Manfaat" value={data.manfaat} />
-                    <Separator />
-                    <NarrativeBlock title="Hasil" value={data.hasil} />
-                  </CardContent>
-                </TabsContent>
-
-                <TabsContent value="indikator">
-                  <CardContent>
-                    <IndikatorViewer
-                      indikator={data.indikator}
-                      attachments={(data as never as { attachments?: { field: string; path: string }[] }).attachments}
-                    />
-                  </CardContent>
-                </TabsContent>
+                <CardContent className="flex flex-col gap-6 pt-6">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MetaRow icon={User} label="Inisiator" value={data.inisiator} />
+                    <MetaRow icon={CalendarClock} label="Uji Coba" value={formatTanggal(data.tglUjiCoba)} />
+                    <MetaRow icon={CalendarCheck} label="Penerapan" value={formatTanggal(data.tglPenerapan)} />
+                    <MetaRow icon={RefreshCw} label="Diperbarui" value={formatTanggal(data.updatedAt)} />
+                  </div>
+                  <Separator />
+                  <NarrativeBlock title="Rancang Bangun" value={data.rancangBangun} />
+                  <Separator />
+                  <NarrativeBlock title="Tujuan" value={data.tujuan} />
+                  <Separator />
+                  <NarrativeBlock title="Manfaat" value={data.manfaat} />
+                  <Separator />
+                  <NarrativeBlock title="Hasil" value={data.hasil} />
+                  <Separator />
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
+                      Video Inovasi
+                    </h3>
+                    {data.indikator?.kualitasVideo ? (
+                      <a
+                        href={data.indikator.kualitasVideo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      >
+                        <Video className="size-4" /> Buka video
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Belum ada video.</p>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
-            </Tabs>
+            ) : (
+              <Tabs defaultValue="profil" className="w-full">
+                <Card className="rounded-[1.75rem]">
+                  <CardHeader>
+                    <TabsList className="gap-2 rounded-full w-fit">
+                      <TabsTrigger value="profil" className="rounded-full">Profil Inovasi</TabsTrigger>
+                      <TabsTrigger value="indikator" className="rounded-full">Indikator</TabsTrigger>
+                    </TabsList>
+                  </CardHeader>
+
+                  <TabsContent value="profil">
+                    <CardContent className="flex flex-col gap-6">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <MetaRow icon={User} label="Inisiator" value={data.inisiator} />
+                        <MetaRow icon={CalendarClock} label="Uji Coba" value={formatTanggal(data.tglUjiCoba)} />
+                        <MetaRow icon={CalendarCheck} label="Penerapan" value={formatTanggal(data.tglPenerapan)} />
+                        <MetaRow icon={RefreshCw} label="Diperbarui" value={formatTanggal(data.updatedAt)} />
+                      </div>
+                      <Separator />
+                      <NarrativeBlock title="Rancang Bangun" value={data.rancangBangun} />
+                      <Separator />
+                      <NarrativeBlock title="Tujuan" value={data.tujuan} />
+                      <Separator />
+                      <NarrativeBlock title="Manfaat" value={data.manfaat} />
+                      <Separator />
+                      <NarrativeBlock title="Hasil" value={data.hasil} />
+                    </CardContent>
+                  </TabsContent>
+
+                  <TabsContent value="indikator">
+                    <CardContent>
+                      <IndikatorViewer
+                        indikator={data.indikator}
+                        attachments={(data as never as { attachments?: { field: string; path: string }[] }).attachments}
+                      />
+                    </CardContent>
+                  </TabsContent>
+                </Card>
+              </Tabs>
+            )}
           </>
         ) : (
           <EmptyState

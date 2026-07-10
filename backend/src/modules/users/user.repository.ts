@@ -131,3 +131,10 @@ export function updateUserUsername(userId: string, username: string) {
     data: { username },
   });
 }
+
+export function updateUserEmail(userId: string, email: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { email, emailVerified: false },
+  });
+}

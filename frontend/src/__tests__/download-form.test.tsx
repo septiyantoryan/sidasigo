@@ -48,4 +48,21 @@ describe("DownloadForm", () => {
       filePath: "/api/public-files/dok.pdf",
     });
   });
+
+  it("accepts DOCX uploads", async () => {
+    const onSubmit = vi.fn();
+    const uploadFile = vi.fn().mockResolvedValue("/api/public-files/dok.docx");
+
+    render(<DownloadForm onSubmit={onSubmit} uploadFile={uploadFile} />);
+
+    const input = screen.getByTestId("file-uploader-input") as HTMLInputElement;
+    const file = new File([new Uint8Array(256)], "dok.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(uploadFile).toHaveBeenCalledWith(file);
+    });
+  });
 });

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, Plus, Trash2, UserCog, Users } from "lucide-react";
+import { KeyRound, Mail, Plus, Trash2, UserCog, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PasswordInput } from "@/components/shared/PasswordInput";
 import { SortableTableHead, useTableSort } from "@/components/shared/SortableTableHead";
-import { useAdminChangePassword, useAdminChangeUsername } from "@/hooks/use-change-password";
+import { useAdminChangeEmail, useAdminChangePassword, useAdminChangeUsername } from "@/hooks/use-change-password";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   useAdminUsers,
@@ -91,6 +91,12 @@ const changeUsernameSchema = z.object({
 
 type ChangeUsernameInput = z.infer<typeof changeUsernameSchema>;
 
+const changeEmailSchema = z.object({
+  email: z.string().email("Format email tidak valid"),
+});
+
+type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
+
 export function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -135,6 +141,11 @@ export function AdminUsersPage() {
   const [userUserEmail, setUserUserEmail] = useState("");
   const userMutation = useAdminChangeUsername(userUserId);
 
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailUserId, setEmailUserId] = useState("");
+  const [emailUserEmail, setEmailUserEmail] = useState("");
+  const emailMutation = useAdminChangeEmail(emailUserId);
+
   const form = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
     defaultValues: { name: "", username: "", email: "", password: "" },
@@ -148,6 +159,11 @@ export function AdminUsersPage() {
   const userForm = useForm<ChangeUsernameInput>({
     resolver: zodResolver(changeUsernameSchema),
     defaultValues: { username: "" },
+  });
+
+  const emailForm = useForm<ChangeEmailInput>({
+    resolver: zodResolver(changeEmailSchema),
+    defaultValues: { email: "" },
   });
 
   const items = list.data?.items ?? [];
@@ -244,6 +260,18 @@ export function AdminUsersPage() {
                           }}
                         >
                           <UserCog className="size-3.5" /> Username
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEmailUserId(user.id);
+                            setEmailUserEmail(user.email);
+                            emailForm.reset();
+                            setEmailOpen(true);
+                          }}
+                        >
+                          <Mail className="size-3.5" /> Email
                         </Button>
                         {user.role !== "Admin" && (
                           <Button
@@ -417,6 +445,42 @@ export function AdminUsersPage() {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setUserOpen(false)}>Batal</Button>
               <Button type="submit" disabled={userMutation.isPending}>Simpan</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ubah Email</DialogTitle>
+            <DialogDescription>
+              Atur email baru untuk {emailUserEmail}.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex flex-col gap-4"
+            noValidate
+            onSubmit={emailForm.handleSubmit(async (values) => {
+              try {
+                await emailMutation.mutateAsync({ email: values.email });
+                toast.success("Email berhasil diubah");
+                setEmailOpen(false);
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Gagal mengubah email");
+              }
+            })}
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email-new">Email Baru</Label>
+              <Input id="email-new" type="email" placeholder="Masukkan Email Baru" {...emailForm.register("email")} />
+              {emailForm.formState.errors.email && (
+                <p role="alert" className="text-xs text-destructive">{emailForm.formState.errors.email.message}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEmailOpen(false)}>Batal</Button>
+              <Button type="submit" disabled={emailMutation.isPending}>Simpan</Button>
             </DialogFooter>
           </form>
         </DialogContent>
