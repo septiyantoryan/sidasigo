@@ -17,6 +17,12 @@ describe("RisetForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("offers Policy Brief", () => {
+    render(<RisetForm onSubmit={vi.fn()} uploadFile={vi.fn()} />);
+    fireEvent.click(screen.getByRole("combobox", { name: /jenis/i }));
+    expect(screen.getAllByText("Policy Brief")).not.toHaveLength(0);
+  });
+
   it("uploads file on drop and submits valid payload", async () => {
     const onSubmit = vi.fn();
     const uploadFile = vi.fn().mockResolvedValue("/api/public-files/doc.pdf");

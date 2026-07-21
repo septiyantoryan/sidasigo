@@ -1,7 +1,10 @@
 import type { RequestHandler } from "express";
 import { uploadPublicSingle } from "../../lib/public-upload";
 import { error, success } from "../../utils/response";
-import { findAdminInovasiDaerahPaginated } from "../inovasi-daerah/inovasi-daerah.service";
+import {
+  findAdminInovasiDaerahPaginated,
+  findInovasiDaerahInisiatorOptions,
+} from "../inovasi-daerah/inovasi-daerah.service";
 import { findAdminKrenovaPaginated } from "../krenova/krenova.service";
 import {
   adminGoogleUsersQuerySchema,
@@ -72,6 +75,10 @@ export const getAdminInovasiDaerah: RequestHandler = async (request, response) =
     return;
   }
   success(response, await findAdminInovasiDaerahPaginated(parsed.data));
+};
+
+export const getAdminInovasiDaerahInisiators: RequestHandler = async (_request, response) => {
+  success(response, await findInovasiDaerahInisiatorOptions());
 };
 
 export const getAdminKrenova: RequestHandler = async (request, response) => {

@@ -1,7 +1,7 @@
 export type Status = "Pending" | "Disetujui" | "Ditolak";
 export type JenisInovasi = "Digital" | "Non_Digital";
 export type Role = "Admin" | "OPD" | "Masyarakat";
-export type JenisRiset = "RisetKajian" | "Penelitian";
+export type JenisRiset = "RisetKajian" | "Penelitian" | "PolicyBrief";
 
 export type Riset = {
   id: string;

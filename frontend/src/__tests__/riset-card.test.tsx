@@ -44,4 +44,9 @@ describe("RisetCard", () => {
     renderCard({ ...item, id: "k1", jenis: "Penelitian" });
     expect(screen.getByText("Penelitian")).toBeInTheDocument();
   });
+
+  it("renders Policy Brief outline badge", () => {
+    renderCard({ ...item, id: "p1", jenis: "PolicyBrief" });
+    expect(screen.getByText("Policy Brief")).toHaveClass("border");
+  });
 });

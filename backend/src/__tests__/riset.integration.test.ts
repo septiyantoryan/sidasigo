@@ -87,6 +87,27 @@ describe("riset integration", () => {
     expect(allRiset).toBe(true);
   });
 
+  it("public and admin lists support PolicyBrief", async () => {
+    const create = await request(app)
+      .post("/api/admin/riset")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", adminId)
+      .send({ judulKajian: "Policy Brief Uji", timPeneliti: "Peneliti", tahunPublikasi: 2025, abstrak: "Abstrak", filePath: "/api/public-files/policy.pdf", jenis: "PolicyBrief" });
+    const id = create.body.data.id;
+    const [publicList, adminList] = await Promise.all([
+      request(app).get("/api/riset?jenis=PolicyBrief"),
+      request(app).get("/api/admin/riset?jenis=PolicyBrief").set("x-test-role", "Admin").set("x-test-user-id", adminId),
+    ]);
+    expect(create.status).toBe(201);
+    expect(publicList.body.data.items.map((item: { id: string }) => item.id)).toContain(id);
+    expect(adminList.body.data.items.map((item: { id: string }) => item.id)).toContain(id);
+    const update = await request(app).put(`/api/admin/riset/${id}`).set("x-test-role", "Admin").set("x-test-user-id", adminId).send({ jenis: "Penelitian" });
+    expect(update.body.data.jenis).toBe("Penelitian");
+    const invalid = await request(app).post("/api/admin/riset").set("x-test-role", "Admin").set("x-test-user-id", adminId).send({ judulKajian: "Invalid", timPeneliti: "Peneliti", tahunPublikasi: 2025, abstrak: "Abstrak", filePath: "/api/public-files/invalid.pdf", jenis: "Invalid" });
+    expect(invalid.status).toBe(400);
+    await prisma.riset.delete({ where: { id } });
+  });
+
   it("public list searches by judul", async () => {
     const response = await request(app).get("/api/riset?search=Kajian Uji");
 

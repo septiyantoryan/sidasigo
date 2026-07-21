@@ -51,7 +51,7 @@ export function RisetDetailContent({
             <AnimatedSection direction="up">
               <div className="flex flex-col gap-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={data.jenis === "RisetKajian" ? "default" : "secondary"}>
+                  <Badge variant={data.jenis === "PolicyBrief" ? "outline" : data.jenis === "RisetKajian" ? "default" : "secondary"}>
                     {formatJenisRiset(data.jenis)}
                   </Badge>
                   <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">

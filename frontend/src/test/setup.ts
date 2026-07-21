@@ -1,5 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => undefined;
+}
+
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.setPointerCapture = () => undefined;
+  Element.prototype.releasePointerCapture = () => undefined;
+}
+
 if (typeof URL !== "undefined") {
   if (!URL.createObjectURL) {
     URL.createObjectURL = () => "blob:mock";

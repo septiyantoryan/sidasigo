@@ -78,6 +78,7 @@ export type AdminInovasiParams = {
   sortDir?: "asc" | "desc";
   jenis?: "Digital" | "Non_Digital";
   status?: "Pending" | "Disetujui" | "Ditolak";
+  inisiator?: string;
 };
 
 export type AdminKrenovaParams = {
@@ -143,6 +144,14 @@ export function useAdminInovasiDaerah(params: AdminInovasiParams = {}) {
         `/api/admin/inovasi-daerah${toQueryString(params)}`,
       ),
     placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminInovasiInisiators() {
+  return useQuery<string[]>({
+    queryKey: ["admin", "inovasi-daerah", "inisiators"],
+    queryFn: () => api.get<string[]>("/api/admin/inovasi-daerah/inisiators"),
     staleTime: 30_000,
   });
 }

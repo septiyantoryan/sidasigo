@@ -16,9 +16,19 @@ export function Footer() {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2">
         <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <span className="flex w-80 items-center justify-center">
-              <img src="/bapperida.png" alt="Logo Kabupaten Grobogan"/>
-            </span>
+            <a
+              href="https://bapperida.grobogan.go.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Kunjungi situs BAPPERIDA Kabupaten Grobogan"
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <img
+                src="/bapperida.png"
+                alt="Logo BAPPERIDA Kabupaten Grobogan"
+                className="h-16 w-auto max-w-72 object-contain"
+              />
+            </a>
           </div>
 
           <div className="space-y-3">
@@ -71,8 +81,28 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border">
-        <div className="mx-auto w-full max-w-6xl px-4 py-5 text-center text-sm text-muted-foreground sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 py-5 text-center text-sm text-muted-foreground sm:px-6 md:flex-row md:justify-between md:text-left">
           <p>&copy; {new Date().getFullYear()} SIDASI-GO &mdash; Pemerintah Kabupaten Grobogan</p>
+          <div className="flex items-center justify-center gap-4">
+            <a
+              href="https://www.brin.go.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Kunjungi situs BRIN"
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <img src="/brin.png" alt="Logo BRIN" className="h-10 w-auto max-w-28 object-contain" />
+            </a>
+            <a
+              href="https://brida.jatengprov.go.id/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Kunjungi situs BRIDA Jawa Tengah"
+              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <img src="/brida.png" alt="Logo BRIDA Jawa Tengah" className="h-10 w-auto max-w-28 object-contain" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

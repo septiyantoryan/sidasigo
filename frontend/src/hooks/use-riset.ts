@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { toQueryString, type PaginatedResponse } from "../lib/pagination";
-import type { Riset } from "../types";
+import type { JenisRiset, Riset } from "../types";
 import type { RisetCreateInput } from "../validators/riset";
 
 export type RisetListParams = {
@@ -11,7 +11,7 @@ export type RisetListParams = {
   sort?: "newest" | "oldest";
   sortBy?: string;
   sortDir?: "asc" | "desc";
-  jenis?: "RisetKajian" | "Penelitian";
+  jenis?: JenisRiset;
 };
 
 export function useRisetList(params: RisetListParams = {}) {

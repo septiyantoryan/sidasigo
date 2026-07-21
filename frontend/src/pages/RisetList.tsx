@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useRisetList } from "@/hooks/use-riset";
+import { formatJenisRiset } from "@/lib/format";
+import type { JenisRiset } from "@/types";
 
-function RisetTabPanel({ jenis }: { jenis: "RisetKajian" | "Penelitian" }) {
+function RisetTabPanel({ jenis }: { jenis: JenisRiset }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
   const [search, setSearch] = useState("");
@@ -39,10 +41,10 @@ function RisetTabPanel({ jenis }: { jenis: "RisetKajian" | "Penelitian" }) {
         <div className="relative mx-auto max-w-6xl">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            aria-label={`Cari ${jenis}`}
+            aria-label={`Cari ${formatJenisRiset(jenis)}`}
             value={search}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-            placeholder={`Cari judul atau peneliti ${jenis.toLowerCase()}...`}
+            placeholder={`Cari judul atau peneliti ${formatJenisRiset(jenis).toLowerCase()}...`}
             className="rounded-full pl-9"
           />
         </div>
@@ -53,7 +55,7 @@ function RisetTabPanel({ jenis }: { jenis: "RisetKajian" | "Penelitian" }) {
       ) : items.length === 0 ? (
         <EmptyState
           icon={FileSearch}
-          title={`Belum ada ${jenis.toLowerCase()}`}
+          title={`Belum ada ${formatJenisRiset(jenis).toLowerCase()}`}
           description="Belum ada dokumen yang cocok dengan pencarian Anda."
         />
       ) : (
@@ -101,6 +103,7 @@ export function RisetListPage() {
           <TabsList className="rounded-full">
             <TabsTrigger value="RisetKajian" className="rounded-full">Riset/Kajian</TabsTrigger>
             <TabsTrigger value="Penelitian" className="rounded-full">Penelitian</TabsTrigger>
+            <TabsTrigger value="PolicyBrief" className="rounded-full">Policy Brief</TabsTrigger>
           </TabsList>
 
           <TabsContent value="RisetKajian" className="mt-6">
@@ -108,6 +111,9 @@ export function RisetListPage() {
           </TabsContent>
           <TabsContent value="Penelitian" className="mt-6">
             <RisetTabPanel jenis="Penelitian" />
+          </TabsContent>
+          <TabsContent value="PolicyBrief" className="mt-6">
+            <RisetTabPanel jenis="PolicyBrief" />
           </TabsContent>
         </Tabs>
       </div>

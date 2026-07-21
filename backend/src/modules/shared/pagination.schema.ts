@@ -61,6 +61,7 @@ export const adminGoogleUsersQuerySchema = paginationBaseSchema.extend({
 export const adminInovasiQuerySchema = paginationBaseSchema.extend({
   jenis: z.enum(["Digital", "Non_Digital"]).optional(),
   status: z.enum(["Pending", "Disetujui", "Ditolak"]).optional(),
+  inisiator: z.string().trim().min(1).max(200).optional(),
   sortBy: inovasiSortBy,
 });
 
@@ -72,7 +73,7 @@ export const adminKrenovaQuerySchema = paginationBaseSchema.extend({
 });
 
 export const risetListQuerySchema = paginationBaseSchema.extend({
-  jenis: z.enum(["RisetKajian", "Penelitian"]).optional(),
+  jenis: z.enum(["RisetKajian", "Penelitian", "PolicyBrief"]).optional(),
   sortBy: z
     .enum(["judulKajian", "timPeneliti", "jenis", "tahunPublikasi", "createdAt"])
     .optional(),

@@ -12,7 +12,7 @@ export const risetCreateSchema = z.object({
     .max(currentYear + 1, "Tahun publikasi tidak valid"),
   abstrak: z.string().min(1, "Abstrak wajib diisi"),
   filePath: z.string().min(1, "File wajib diunggah"),
-  jenis: z.enum(["RisetKajian", "Penelitian"]),
+  jenis: z.enum(["RisetKajian", "Penelitian", "PolicyBrief"]),
 });
 
 export type RisetCreateInput = z.infer<typeof risetCreateSchema>;

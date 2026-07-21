@@ -26,11 +26,12 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { SortableTableHead, useTableSort } from "@/components/shared/SortableTableHead";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useAdminInovasiDaerah } from "@/hooks/use-dashboard";
+import { useAdminInovasiDaerah, useAdminInovasiInisiators } from "@/hooks/use-dashboard";
 import { formatTanggal } from "@/lib/format";
 
 type StatusFilter = "All" | "Pending" | "Disetujui" | "Ditolak";
 type JenisFilter = "All" | "Digital" | "Non_Digital";
+type InisiatorFilter = "All" | string;
 
 export function AdminInovasiDaerahManagePage() {
   const [page, setPage] = useState(1);
@@ -38,6 +39,8 @@ export function AdminInovasiDaerahManagePage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("All");
   const [jenis, setJenis] = useState<JenisFilter>("All");
+  const [inisiator, setInisiator] = useState<InisiatorFilter>("All");
+  const inisiators = useAdminInovasiInisiators();
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
@@ -48,7 +51,7 @@ export function AdminInovasiDaerahManagePage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, status, jenis, pageSize]);
+  }, [debouncedSearch, status, jenis, inisiator, pageSize]);
 
   const list = useAdminInovasiDaerah({
     page,
@@ -56,6 +59,7 @@ export function AdminInovasiDaerahManagePage() {
     search: debouncedSearch,
     status: status === "All" ? undefined : status,
     jenis: jenis === "All" ? undefined : jenis,
+    inisiator: inisiator === "All" ? undefined : inisiator,
     sortBy: sort.sortBy,
     sortDir: sort.sortDir,
   });
@@ -89,6 +93,21 @@ export function AdminInovasiDaerahManagePage() {
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="Disetujui">Disetujui</SelectItem>
                 <SelectItem value="Ditolak">Ditolak</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={inisiator} onValueChange={(value) => setInisiator(value)}>
+              <SelectTrigger aria-label="Filter inisiator" className="sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">Semua inisiator</SelectItem>
+                {inisiators.isLoading ? (
+                  <SelectItem value="loading" disabled>Memuat inisiator...</SelectItem>
+                ) : inisiators.isError ? (
+                  <SelectItem value="error" disabled>Gagal memuat daftar inisiator</SelectItem>
+                ) : (
+                  inisiators.data?.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)
+                )}
               </SelectContent>
             </Select>
             <Select value={jenis} onValueChange={(value) => setJenis(value as JenisFilter)}>

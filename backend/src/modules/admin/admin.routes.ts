@@ -10,6 +10,7 @@ import {
   getAdminDashboard,
   getAdminGoogleUsers,
   getAdminInovasiDaerah,
+  getAdminInovasiDaerahInisiators,
   getAdminKrenova,
   getAdminSettings,
   getAdminSubmissions,
@@ -49,6 +50,7 @@ router.delete("/users/:id", deleteAdminUser);
 router.put("/users/:id/change-password", validate(changePasswordAdminSchema), putAdminUserPassword);
 router.put("/users/:id/change-username", validate(changeUsernameAdminSchema), putAdminUsername);
 router.put("/users/:id/change-email", validate(changeEmailAdminSchema), putAdminEmail);
+router.get("/inovasi-daerah/inisiators", getAdminInovasiDaerahInisiators);
 router.get("/inovasi-daerah", getAdminInovasiDaerah);
 router.get("/krenova", getAdminKrenova);
 router.get("/settings", getAdminSettings);

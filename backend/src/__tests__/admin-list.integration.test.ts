@@ -56,6 +56,26 @@ describe("admin list integration", () => {
       inovasiIds.push(row.id);
     }
 
+    for (const inisiator of ["  Badan Riset  ", "Badan Riset", "", "Dinas Kominfo"]) {
+      const row = await prisma.inovasiDaerah.create({
+        data: {
+          userId: opdId,
+          namaInovasi: `Filter Inisiator ${inisiator || "Kosong"}`,
+          inisiator,
+          jenisInovasi: JenisInovasi.Digital,
+          bentukInovasi: "App",
+          tglUjiCoba: new Date("2025-01-01"),
+          tglPenerapan: new Date("2025-02-01"),
+          rancangBangun: "x".repeat(320),
+          tujuan: "Tujuan",
+          manfaat: "Manfaat",
+          hasil: "Hasil",
+          status: Status.Pending,
+        },
+      });
+      inovasiIds.push(row.id);
+    }
+
     const krenovaStatuses = [Status.Pending, Status.Disetujui, Status.Ditolak];
     for (const status of krenovaStatuses) {
       const row = await prisma.krenova.create({
@@ -118,13 +138,39 @@ describe("admin list integration", () => {
     }
   });
 
-  it("non admin cannot access admin list", async () => {
+  it("admin filters inovasi by exact inisiator with existing filters", async () => {
     const response = await request(app)
       .get("/api/admin/inovasi-daerah")
-      .set("x-test-role", "OPD")
-      .set("x-test-user-id", opdId);
+      .query({ pageSize: 50, inisiator: "Badan Riset", status: "Pending", search: "Filter Inisiator" })
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test");
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
+    expect(response.body.data.items).toHaveLength(1);
+    expect(response.body.data.items[0].inisiator).toBe("Badan Riset");
+  });
+
+  it("admin gets trimmed unique sorted inisiator options", async () => {
+    const response = await request(app)
+      .get("/api/admin/inovasi-daerah/inisiators")
+      .set("x-test-role", "Admin")
+      .set("x-test-user-id", "admin-test");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(expect.arrayContaining(["Badan Riset", "Dinas Kominfo"]));
+    expect(response.body.data).not.toContain("");
+    expect(response.body.data.filter((value: string) => value === "Badan Riset")).toHaveLength(1);
+    expect(response.body.data).toEqual([...response.body.data].sort((a: string, b: string) => a.localeCompare(b)));
+  });
+
+  it("non admin cannot access admin list or inisiator options", async () => {
+    const [list, options] = await Promise.all([
+      request(app).get("/api/admin/inovasi-daerah").set("x-test-role", "OPD").set("x-test-user-id", opdId),
+      request(app).get("/api/admin/inovasi-daerah/inisiators").set("x-test-role", "OPD").set("x-test-user-id", opdId),
+    ]);
+
+    expect(list.status).toBe(403);
+    expect(options.status).toBe(403);
   });
 
   it("admin can list krenova of all statuses", async () => {

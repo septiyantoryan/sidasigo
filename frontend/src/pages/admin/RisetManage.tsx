@@ -28,7 +28,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAdminRisetList } from "@/hooks/use-riset";
 import { formatTanggal, formatJenisRiset } from "@/lib/format";
 
-type JenisFilter = "All" | "RisetKajian" | "Penelitian";
+type JenisFilter = "All" | "RisetKajian" | "Penelitian" | "PolicyBrief";
 
 export function AdminRisetManagePage() {
   const [page, setPage] = useState(1);
@@ -90,6 +90,7 @@ export function AdminRisetManagePage() {
               <SelectItem value="All">Semua jenis</SelectItem>
               <SelectItem value="RisetKajian">Riset/Kajian</SelectItem>
               <SelectItem value="Penelitian">Penelitian</SelectItem>
+              <SelectItem value="PolicyBrief">Policy Brief</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -125,7 +126,7 @@ export function AdminRisetManagePage() {
                     <TableCell className="max-w-[12rem] truncate font-medium">{item.judulKajian}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.timPeneliti}</TableCell>
                     <TableCell>
-                      <Badge variant={item.jenis === "RisetKajian" ? "default" : "secondary"}>
+                      <Badge variant={item.jenis === "PolicyBrief" ? "outline" : item.jenis === "RisetKajian" ? "default" : "secondary"}>
                         {formatJenisRiset(item.jenis)}
                       </Badge>
                     </TableCell>

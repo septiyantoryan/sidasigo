@@ -94,6 +94,7 @@ export function RisetForm({
             <SelectContent>
               <SelectItem value="RisetKajian">Riset/Kajian</SelectItem>
               <SelectItem value="Penelitian">Penelitian</SelectItem>
+              <SelectItem value="PolicyBrief">Policy Brief</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -92,11 +92,12 @@ export async function findMyInovasiRows(userId: string, input: InovasiListQuery)
 }
 
 export async function findAdminInovasiRows(input: AdminInovasiQuery) {
-  const { page, pageSize, search, jenis, status } = input;
+  const { page, pageSize, search, jenis, status, inisiator } = input;
   const { skip, take } = toSkipTake(page, pageSize);
   const where: Prisma.InovasiDaerahWhereInput = {
     ...(jenis ? { jenisInovasi: jenis } : {}),
     ...(status ? { status } : {}),
+    ...(inisiator ? { inisiator } : {}),
     ...(buildSearchWhere(search) ?? {}),
   };
 
@@ -110,6 +111,10 @@ export async function findAdminInovasiRows(input: AdminInovasiQuery) {
     }),
     prisma.inovasiDaerah.count({ where }),
   ]);
+}
+
+export function findInovasiInisiators() {
+  return prisma.inovasiDaerah.findMany({ select: { inisiator: true } });
 }
 
 export function countMyInovasiStats(userId: string) {

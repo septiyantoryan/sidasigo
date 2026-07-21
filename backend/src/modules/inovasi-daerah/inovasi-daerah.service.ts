@@ -21,6 +21,7 @@ import {
   deleteInovasi,
   findAdminInovasiRows,
   findInovasiById,
+  findInovasiInisiators,
   findMyInovasiRows,
   findPublicInovasiRows,
   findVisibleInovasiById,
@@ -64,6 +65,13 @@ export async function findMyInovasiDaerahPaginated(userId: string, input: Inovas
 export async function findAdminInovasiDaerahPaginated(input: AdminInovasiQuery) {
   const [items, total] = await findAdminInovasiRows(input);
   return buildPaginated(items, total, input.page, input.pageSize);
+}
+
+export async function findInovasiDaerahInisiatorOptions() {
+  const rows = await findInovasiInisiators();
+  return [...new Set(rows.map(({ inisiator }) => inisiator.trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 export async function findMyInovasiDaerahStats(userId: string) {

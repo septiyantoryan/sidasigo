@@ -13,6 +13,6 @@ export function formatJenis(jenis: "Digital" | "Non_Digital") {
   return jenis === "Digital" ? "Digital" : "Non Digital";
 }
 
-export function formatJenisRiset(jenis: "RisetKajian" | "Penelitian") {
-  return jenis === "RisetKajian" ? "Riset/Kajian" : "Penelitian";
+export function formatJenisRiset(jenis: "RisetKajian" | "Penelitian" | "PolicyBrief") {
+  return jenis === "RisetKajian" ? "Riset/Kajian" : jenis === "PolicyBrief" ? "Policy Brief" : "Penelitian";
 }

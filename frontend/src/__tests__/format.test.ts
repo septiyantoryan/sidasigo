@@ -42,4 +42,8 @@ describe("formatJenisRiset", () => {
   it("maps Penelitian", () => {
     expect(formatJenisRiset("Penelitian")).toBe("Penelitian");
   });
+
+  it("maps PolicyBrief to 'Policy Brief'", () => {
+    expect(formatJenisRiset("PolicyBrief")).toBe("Policy Brief");
+  });
 });

@@ -11,7 +11,7 @@ export function RisetCard({ item }: { item: Riset }) {
       <Card className="group h-full rounded-[1.75rem] border-border bg-card text-foreground transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
         <CardContent className="flex h-full flex-col gap-4 p-5">
           <div className="flex items-start justify-between gap-3">
-            <Badge variant={item.jenis === "RisetKajian" ? "default" : "secondary"}>
+            <Badge variant={item.jenis === "PolicyBrief" ? "outline" : item.jenis === "RisetKajian" ? "default" : "secondary"}>
               {formatJenisRiset(item.jenis)}
             </Badge>
             <span className="text-xs text-muted-foreground">{item.tahunPublikasi}</span>
